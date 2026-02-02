@@ -17,7 +17,12 @@
 .accountability-layout {
     display: flex;
     gap: 2rem;
-    align-items: flex-start;
+    align-items: center;
+    /* Center items vertically */
+    justify-content: center;
+    /* Center items horizontally */
+    min-height: calc(100vh - 4rem);
+    /* Ensure full height centering if content is short */
 }
 
 /* ... existing code ... */
@@ -52,10 +57,9 @@
 
 /* Swiper Styles */
 .swiper {
-    width: 400px;
-    /* Increased for better image display */
+    width: 100%;
+    max-width: 400px;
     height: 500px;
-    /* Increased for better image display */
 }
 
 .swiper-slide {
@@ -155,7 +159,8 @@
     width: 100%;
     max-width: 750px;
     /* Increased width for better form display */
-    /* margin-right: 4rem; Removed to correct alignment */
+    margin: 0 auto;
+    /* Ensure horizontal centering */
 }
 
 /* Form Group */
@@ -520,58 +525,120 @@
 }
 
 /* Responsive Design */
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .accountability-container {
+        max-width: 95%;
+        padding: 0 1rem;
+    }
+
+    .accountability-swiper-section {
+        padding: 2rem;
+    }
+}
+
 @media (max-width: 992px) {
     .accountability-layout {
         flex-direction: column;
         align-items: center;
+        gap: 3rem;
     }
 
     .accountability-swiper-section {
-        margin-bottom: 2rem;
         position: static;
         width: 100%;
+        height: auto;
+        padding: 0;
+        margin-bottom: 2rem;
+        max-height: none;
+    }
+
+    .swiper {
+        max-width: 350px;
+        height: 450px;
     }
 
     .accountability-form-section {
         width: 100%;
-        max-width: 100%;
+        padding: 0;
+    }
+
+    .accountability-form {
+        max-width: 600px;
+        margin: 0 auto;
     }
 }
 
 @media (max-width: 768px) {
     .accountability-page {
-        padding: 2rem 1rem;
-    }
-
-    .accountability-form {
-        padding: 2rem 1.5rem;
+        padding: 1.5rem 0;
     }
 
     .accountability-header h1 {
-        font-size: 2rem;
+        font-size: 2.25rem;
     }
 
-    .radio-group {
-        flex-direction: column;
-        gap: 1rem;
+    .accountability-header p {
+        font-size: 1rem;
+        padding: 0 1rem;
+    }
+
+    .accountability-form {
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .swiper {
+        height: 400px;
+        max-width: 300px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
     }
 
     .emoji-icon {
         font-size: 4rem;
     }
 
-    .emoji-label {
-        font-size: 1rem;
+    .checkbox-group,
+    .radio-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .checkbox-label,
+    .radio-label {
+        width: 100%;
+        padding: 0.875rem 1rem;
     }
 }
 
 @media (max-width: 480px) {
-    .accountability-form {
-        padding: 1.5rem 1rem;
+    .accountability-header h1 {
+        font-size: 1.75rem;
     }
 
-    .form-group {
-        margin-bottom: 1.5rem;
+    .accountability-form {
+        padding: 1.25rem 1rem;
+        box-shadow: none;
+        background: transparent;
+        border: none;
+        backdrop-filter: none;
+    }
+
+    .form-group input[type="date"],
+    .form-group input[type="time"],
+    .form-group textarea,
+    .form-group .MuiOutlinedInput-root {
+        font-size: 16px;
+        /* Prevents auto-zoom on iOS */
+    }
+
+    .swiper {
+        height: 350px;
+        max-width: 260px;
     }
 
     .hearing-section {
@@ -579,10 +646,16 @@
     }
 
     .emoji-feedback {
-        padding: 1.5rem;
+        padding: 1rem;
+        margin-top: 1rem;
     }
 
     .emoji-icon {
-        font-size: 3.5rem;
+        font-size: 3rem;
+    }
+
+    .submit-btn {
+        padding: 1rem;
+        font-size: 1rem;
     }
 }
