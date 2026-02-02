@@ -132,7 +132,7 @@ const Home = () => {
     return (
         <div className="home-page">
             <motion.section
-                className="hero-section"
+                className="hero-section responsive-section"
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true }}
@@ -144,7 +144,6 @@ const Home = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '2rem 2rem 2rem', // Reduced bottom padding
                     background: 'var(--color-white)',
                     color: 'var(--color-jet-black)',
                     overflow: 'hidden'
@@ -168,7 +167,7 @@ const Home = () => {
                         width: '100%',
                         textAlign: 'left'
                     }}>
-                        <div style={{ flex: '1 1 500px', paddingRight: '2rem' }}>
+                        <div className="center-text-mobile" style={{ flex: '1 1 500px', paddingRight: '0' }}>
                             <motion.h1
                                 variants={fadeIn}
                                 style={{
@@ -226,11 +225,7 @@ const Home = () => {
                     </div>
                 </div>
 
-                <div className="container" style={{
-                    display: 'grid',
-                    gridTemplateHeading: 'none',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-                    gap: '2rem',
+                <div className="container responsive-grid" style={{
                     width: '100%',
                     maxWidth: '1200px'
                 }}>
@@ -395,8 +390,8 @@ const Home = () => {
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
+                className="responsive-section"
                 style={{
-                    padding: '2rem 2rem 2rem', // Reduced top padding to 2rem
                     background: 'var(--color-white)',
                     overflow: 'hidden'
                 }}>
@@ -435,7 +430,7 @@ const Home = () => {
                     </div>
 
                     {/* Content Side */}
-                    <div style={{ flex: '1 1 500px', maxWidth: '600px' }}>
+                    <div className="center-text-mobile" style={{ flex: '1 1 500px', maxWidth: '600px' }}>
                         <h2 style={{
                             fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
                             fontFamily: 'var(--font-accent)',
@@ -494,14 +489,15 @@ const Home = () => {
                 <div className="container">
                     <motion.h2
                         variants={fadeIn}
+                        className="center-text-mobile"
                         style={{
                             fontSize: 'clamp(2.5rem, 5vw, 3.5rem)',
                             fontFamily: 'var(--font-accent)',
                             color: '#1f7a8c',
-                            textAlign: 'center',
                             marginBottom: '4rem',
                             fontWeight: 700,
-                            lineHeight: 1.1
+                            lineHeight: 1.1,
+                            textAlign: 'center'
                         }}
                     >
                         Our Offerings
@@ -624,8 +620,7 @@ const Home = () => {
             </motion.section>
 
             {/* Divine Glimpses Section */}
-            <section style={{
-                padding: '2rem 2rem',
+            <section className="responsive-section" style={{
                 background: 'var(--color-white)',
             }}>
                 <div className="container">
@@ -741,8 +736,8 @@ const Home = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
                 variants={fadeIn}
+                className="responsive-section"
                 style={{
-                    padding: '4rem 2rem',
                     background: 'var(--color-white)',
                     position: 'relative',
                     overflow: 'hidden'
@@ -909,8 +904,8 @@ const Home = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
                 variants={fadeIn}
+                className="responsive-section"
                 style={{
-                    padding: '6rem 2rem',
                     background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
                     position: 'relative',
                     overflow: 'hidden'
@@ -978,6 +973,7 @@ const Home = () => {
                             initial={{ opacity: 0, x: -50 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8, delay: 0.2 }}
+                            className="center-text-mobile mobile-center-items"
                             style={{
                                 display: 'flex',
                                 flexDirection: 'column',

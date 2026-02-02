@@ -1,0 +1,21 @@
+1. Registering Admin...
+Admin Register Status:
+
+2. Creating Counselor (as Admin)...
+Counselor Create Status:
+
+3. Creating User 1 (as Counselor)...
+User 1 Create Status:
+SUCCESS: User 1 correctly assigned to Counselor
+
+4. Creating User 2 (as Admin, assigned to Counselor)...
+User 2 Create Status:
+SUCCESS: User 2 correctly assigned to Counselor
+
+5. Checking Counselor Dashboard...
+Counselor Dash Status:
+Counselor sees users:
+SUCCESS: Counselor sees correct users
+
+6. Checking Admin Dashboard...
+Admin Dash Status:

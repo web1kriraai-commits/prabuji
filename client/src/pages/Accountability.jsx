@@ -5,6 +5,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import dayjs from 'dayjs';
+import { useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 
 // Import Swiper React components
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -30,6 +32,7 @@ import gaurangaVidhyapith from '../assets/image/gauranga-vidhyapith.jpg';
 import './Accountability.css';
 
 const Accountability = () => {
+    const { user } = useAuth();
     const [formData, setFormData] = useState({
         date: null,
         wakeupTime: null,
@@ -43,6 +46,9 @@ const Accountability = () => {
     });
 
     const [showEmoji, setShowEmoji] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+    const [submitSuccess, setSubmitSuccess] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -80,10 +86,61 @@ const Accountability = () => {
         setFormData(prev => ({ ...prev, bedTime: newValue }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Form submitted:', formData);
-        // Add your submission logic here
+
+        // Check if user is logged in
+        if (!user) {
+            setSubmitError('Please log in to submit your accountability report');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setSubmitError('');
+        setSubmitSuccess(false);
+
+        try {
+            // Format the data for API
+            const payload = {
+                date: formData.date ? formData.date.toISOString() : new Date().toISOString(),
+                wakeupTime: formData.wakeupTime ? formData.wakeupTime.format('HH:mm') : '',
+                chantingRounds: formData.chantingRounds,
+                bookReading: formData.bookReading,
+                deityPrayer: formData.deityPrayer,
+                lectureBy: formData.lectureBy,
+                hearingMinutes: formData.hearingMinutes,
+                bedTime: formData.bedTime ? formData.bedTime.format('HH:mm') : '',
+                individualVows: formData.individualVows
+            };
+
+            await api.post('/accountability', payload);
+
+            setSubmitSuccess(true);
+
+            // Reset form
+            setFormData({
+                date: null,
+                wakeupTime: null,
+                chantingRounds: 0,
+                bookReading: 0,
+                deityPrayer: '',
+                lectureBy: [],
+                hearingMinutes: 0,
+                bedTime: null,
+                individualVows: ''
+            });
+
+            // Hide success message after 5 seconds
+            setTimeout(() => {
+                setSubmitSuccess(false);
+            }, 5000);
+
+        } catch (error) {
+            console.error('Error submitting accountability:', error);
+            setSubmitError(error.response?.data?.msg || 'Failed to submit report. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getEmojiForHearing = (minutes) => {
@@ -386,15 +443,37 @@ const Accountability = () => {
                                     />
                                 </div>
 
+                                {/* Submit Messages */}
+                                {submitError && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl"
+                                    >
+                                        {submitError}
+                                    </motion.div>
+                                )}
+
+                                {submitSuccess && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl"
+                                    >
+                                        ✅ Sadhana report submitted successfully! Hare Krishna!
+                                    </motion.div>
+                                )}
+
                                 {/* Submit Button */}
                                 <motion.button
                                     type="submit"
-                                    className="submit-btn"
-                                    whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(31, 122, 140, 0.3)" }}
-                                    whileTap={{ scale: 0.98 }}
+                                    disabled={isSubmitting || !user}
+                                    className={`submit-btn ${isSubmitting || !user ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    whileHover={!isSubmitting && user ? { scale: 1.02, boxShadow: "0 8px 24px rgba(31, 122, 140, 0.3)" } : {}}
+                                    whileTap={!isSubmitting && user ? { scale: 0.98 } : {}}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    Submit
+                                    {isSubmitting ? 'Submitting...' : !user ? 'Please Login to Submit' : 'Submit'}
                                 </motion.button>
                             </motion.form>
                         </div>

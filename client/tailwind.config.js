@@ -7,14 +7,17 @@ export default {
     theme: {
         extend: {
             colors: {
-                primary: '#F2C94C', // Golden Yellow
-                secondary: '#1A202C', // Slate Blue/Dark
-                accent: '#EDF2F7', // Off-white/Gray
+                primary: '#E56E0C',        // Orange - Primary/CTA
+                'soft-green': '#D4EAA8',   // Soft Green
+                lavender: '#CDADE6',       // Lavender Purple
+                'sky-blue': '#C8DCE3',     // Sky Blue
+                secondary: '#1A202C',      // Dark slate (kept from original)
+                accent: '#EDF2F7',         // Off-white/Gray (kept from original)
                 'text-dark': '#1A202C',
                 'text-light': '#718096',
             },
             fontFamily: {
-                sans: ['Poppins', 'sans-serif'],
+                sans: ['Laila', 'sans-serif'],
             },
         },
     },

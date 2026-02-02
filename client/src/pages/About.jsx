@@ -34,8 +34,7 @@ const About = () => {
                 backgroundSize: '50px 50px'
             }} />
             {/* Main Content Section */}
-            <section style={{
-                padding: '5rem 2rem',
+            <section className="responsive-section" style={{
                 position: 'relative',
                 background: '#FFFFFF'
             }}>
@@ -43,9 +42,8 @@ const About = () => {
                     maxWidth: '1200px',
                     margin: '0 auto'
                 }}>
-                    <div style={{
+                    <div className="responsive-grid" style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
                         gap: '4rem',
                         alignItems: 'start'
                     }}>
@@ -124,6 +122,7 @@ const About = () => {
 
                         {/* Content Section */}
                         <motion.div
+                            className="center-text-mobile"
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}

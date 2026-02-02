@@ -95,13 +95,50 @@ exports.login = async (req, res) => {
 };
 
 // Create User (for testing - creates users with specific roles)
+// Create User (Admin or Counselor creating users)
 exports.createUser = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password, role, counselorId } = req.body;
 
-        // Validate role
-        if (role && !['user', 'counselor', 'admin'].includes(role)) {
-            return res.status(400).json({ msg: 'Invalid role. Must be user, counselor, or admin' });
+        // Helper to check permissions - assuming middleware adds req.user
+        // If this is called from an authenticated route, req.user will exist
+        // If specialized testing route usage, might not have req.user, be careful.
+        // For this implementation, we assume this stays a protected controller function.
+
+        const creatorRole = req.user ? req.user.role : 'admin'; // Fallback for dev/test without auth middleware if used loosely
+        const creatorId = req.user ? req.user.id : null;
+
+        // Validation based on Creator Role
+        let newRole = 'user';
+        let assignedCounselor = null;
+
+        if (creatorRole === 'admin') {
+            // Admin can create any role
+            if (role) {
+                if (!['user', 'counselor', 'admin'].includes(role)) {
+                    return res.status(400).json({ msg: 'Invalid role' });
+                }
+                newRole = role;
+            }
+            // If Admin creates a USER, they can assign a counselor OR become the counselor themselves
+            if (newRole === 'user') {
+                if (counselorId) {
+                    assignedCounselor = counselorId;
+                } else {
+                    // If no counselorId provided, admin becomes the counselor
+                    assignedCounselor = creatorId;
+                }
+            }
+        } else if (creatorRole === 'counselor') {
+            // Counselor can ONLY create users
+            if (role && role !== 'user') {
+                return res.status(403).json({ msg: 'Counselors can only create users' });
+            }
+            newRole = 'user';
+            // "when counsiler create user so user creatre under that"
+            assignedCounselor = creatorId;
+        } else {
+            return res.status(403).json({ msg: 'Not authorized to create users' });
         }
 
         // Check if user already exists
@@ -119,7 +156,8 @@ exports.createUser = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            role: role || 'user'
+            role: newRole,
+            counselor: assignedCounselor
         });
 
         await user.save();
@@ -130,10 +168,22 @@ exports.createUser = async (req, res) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                counselor: user.counselor
             }
         });
 
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server error');
+    }
+};
+
+// Get All Counselors (For Admin Dropdown)
+exports.getCounselors = async (req, res) => {
+    try {
+        const counselors = await User.find({ role: 'counselor' }).select('-password');
+        res.json(counselors);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');
