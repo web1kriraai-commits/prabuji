@@ -18,6 +18,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/accountability', require('./routes/accountabilityRoutes'));
 app.use('/api/tirthyatra', require('./routes/tirthYatraRoutes'));
+app.use('/api/yatra-registration', require('./routes/yatraRegistrationRoutes'));
 console.log('Routes loaded');
 
 // Serve static assets in production

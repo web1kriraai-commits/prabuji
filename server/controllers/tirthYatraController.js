@@ -55,7 +55,9 @@ exports.createTirthYatra = async (req, res) => {
             trainInfo, // JSON stringified from frontend
             itinerary,
             packages,
-            instructions
+            instructions,
+            includes,
+            excludes
         } = req.body;
 
         let image = req.body.image;

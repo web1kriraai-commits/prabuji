@@ -23,7 +23,11 @@ import {
     Book,
     Headphones,
     Moon,
-    X
+    X,
+    MapPin,
+    Phone,
+    Mail,
+    UserCheck
 } from 'lucide-react';
 import LogoutButton from '../components/LogoutButton';
 import TirthYatraManagement from '../components/TirthYatraManagement';
@@ -33,12 +37,13 @@ const AdminDashboard = () => {
     const [users, setUsers] = useState([]);
     const [counselors, setCounselors] = useState([]);
     const [accountability, setAccountability] = useState([]);
+    const [yatraRegistrations, setYatraRegistrations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [counselorSearchTerm, setCounselorSearchTerm] = useState('');
     const [selectedRole, setSelectedRole] = useState('all');
-    const [activeTab, setActiveTab] = useState('counselors'); // 'counselors', 'users', 'tirthyatra'
+    const [activeTab, setActiveTab] = useState('counselors'); // 'counselors', 'users', 'tirthyatra', 'registrations'
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [selectedUserForView, setSelectedUserForView] = useState(null);
     const [expandedCounselor, setExpandedCounselor] = useState(null);
@@ -46,6 +51,7 @@ const AdminDashboard = () => {
     const [submissionDateFilter, setSubmissionDateFilter] = useState('');
     const [submissionStartDate, setSubmissionStartDate] = useState('');
     const [submissionEndDate, setSubmissionEndDate] = useState('');
+    const [registrationSearchTerm, setRegistrationSearchTerm] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -60,6 +66,7 @@ const AdminDashboard = () => {
         fetchUsers();
         fetchCounselors();
         fetchAllAccountability();
+        fetchYatraRegistrations();
     }, []);
 
     const fetchUsers = async () => {
@@ -93,6 +100,46 @@ const AdminDashboard = () => {
             setAccountability([]);
         }
     };
+
+    const fetchYatraRegistrations = async () => {
+        try {
+            const response = await api.get('/yatra-registration');
+            setYatraRegistrations(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error('Error fetching yatra registrations:', error);
+            setYatraRegistrations([]);
+        }
+    };
+
+    const updateRegistrationStatus = async (regId, status) => {
+        try {
+            await api.put(`/yatra-registration/${regId}`, { status });
+            fetchYatraRegistrations();
+        } catch (error) {
+            console.error('Error updating registration status:', error);
+        }
+    };
+
+    const deleteRegistration = async (regId) => {
+        if (!window.confirm('Are you sure you want to delete this registration?')) return;
+        try {
+            await api.delete(`/yatra-registration/${regId}`);
+            fetchYatraRegistrations();
+        } catch (error) {
+            console.error('Error deleting registration:', error);
+        }
+    };
+
+    // Filter yatra registrations by search
+    const filteredRegistrations = yatraRegistrations.filter(reg => {
+        if (!registrationSearchTerm) return true;
+        const search = registrationSearchTerm.toLowerCase();
+        const memberNames = reg.members?.map(m => m.name?.toLowerCase()).join(' ') || '';
+        return memberNames.includes(search) ||
+            reg.primaryEmail?.toLowerCase().includes(search) ||
+            reg.primaryPhone?.includes(search) ||
+            reg.yatraTitle?.toLowerCase().includes(search);
+    });
 
     // Helper function to get user count for counselor
     const getUserCountForCounselor = (counselorId) => {
@@ -356,10 +403,206 @@ const AdminDashboard = () => {
                     >
                         Tirth Yatra Management
                     </button>
+                    <button
+                        onClick={() => setActiveTab('registrations')}
+                        className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap flex items-center gap-2 ${activeTab === 'registrations'
+                            ? 'border-teal-500 text-teal-700'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        Yatra Registrations
+                        {yatraRegistrations.length > 0 && (
+                            <span className="bg-teal-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                {yatraRegistrations.length}
+                            </span>
+                        )}
+                    </button>
                 </div>
 
                 {activeTab === 'tirthyatra' ? (
                     <TirthYatraManagement />
+                ) : activeTab === 'registrations' ? (
+                    /* Yatra Registrations Section */
+                    <motion.div
+                        className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                    >
+                        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-white">
+                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Yatra Registrations</h2>
+                                    <p className="text-gray-600">View and manage all yatra registration requests</p>
+                                </div>
+                                <div className="relative flex-1 max-w-md">
+                                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by name, email, phone or yatra..."
+                                        value={registrationSearchTerm}
+                                        onChange={(e) => setRegistrationSearchTerm(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            {filteredRegistrations.length > 0 ? (
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Contact</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Yatra</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Members</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Payment</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Status</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {filteredRegistrations.map((reg) => (
+                                            <motion.tr
+                                                key={reg._id}
+                                                className="hover:bg-gray-50 transition-colors"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                            >
+                                                <td className="py-4 px-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center text-white font-bold">
+                                                            {reg.members?.[0]?.name?.charAt(0) || 'U'}
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold text-gray-900">{reg.members?.[0]?.name || 'N/A'}</h4>
+                                                            <div className="flex items-center gap-1 text-gray-500 text-sm">
+                                                                <Mail className="w-3 h-3" />
+                                                                {reg.primaryEmail}
+                                                            </div>
+                                                            <div className="flex items-center gap-1 text-gray-500 text-sm">
+                                                                <Phone className="w-3 h-3" />
+                                                                {reg.primaryPhone}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="font-medium text-gray-800">{reg.yatraTitle}</div>
+                                                    <div className="text-xs text-gray-500">
+                                                        {new Date(reg.createdAt).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    {reg.selectedPackage?.packageName && (
+                                                        <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">
+                                                            {reg.selectedPackage.packageName}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="text-sm">
+                                                        <div className="flex items-center gap-1 text-gray-600 font-medium">
+                                                            <Users className="w-3 h-3" />
+                                                            {reg.members?.length || 0} member(s)
+                                                        </div>
+                                                        {reg.members?.slice(0, 2).map((m, idx) => (
+                                                            <div key={idx} className="text-xs text-gray-500 pl-4">
+                                                                • {m.name} ({m.age}, {m.gender})
+                                                            </div>
+                                                        ))}
+                                                        {reg.members?.length > 2 && (
+                                                            <div className="text-xs text-gray-400 pl-4">
+                                                                +{reg.members.length - 2} more
+                                                            </div>
+                                                        )}
+                                                        {reg.sameRoomPreference && (
+                                                            <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-blue-50 text-blue-600 rounded">
+                                                                Same Room
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="text-sm">
+                                                        <div className="font-bold text-gray-800">₹{(reg.totalAmount || 0).toLocaleString()}</div>
+                                                        <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${reg.paymentStatus === 'verified' ? 'bg-green-100 text-green-700' :
+                                                                reg.paymentStatus === 'uploaded' ? 'bg-blue-100 text-blue-700' :
+                                                                    reg.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' :
+                                                                        'bg-yellow-100 text-yellow-700'
+                                                            }`}>
+                                                            {reg.paymentStatus || 'pending'}
+                                                        </span>
+                                                        {reg.paymentScreenshot && (
+                                                            <a
+                                                                href={reg.paymentScreenshot}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="block text-xs text-teal-600 hover:underline mt-1"
+                                                            >
+                                                                View Screenshot
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <select
+                                                        value={reg.status}
+                                                        onChange={(e) => updateRegistrationStatus(reg._id, e.target.value)}
+                                                        className={`text-sm font-medium px-3 py-1.5 rounded-lg border-0 cursor-pointer ${reg.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                            reg.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                                                                reg.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                                                    'bg-red-100 text-red-800'
+                                                            }`}
+                                                    >
+                                                        <option value="pending">Pending</option>
+                                                        <option value="contacted">Contacted</option>
+                                                        <option value="confirmed">Confirmed</option>
+                                                        <option value="cancelled">Cancelled</option>
+                                                    </select>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="flex items-center gap-2">
+                                                        <a
+                                                            href={`tel:${reg.primaryPhone}`}
+                                                            className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                                                            title="Call"
+                                                        >
+                                                            <Phone className="w-4 h-4" />
+                                                        </a>
+                                                        <a
+                                                            href={`mailto:${reg.primaryEmail}`}
+                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Email"
+                                                        >
+                                                            <Mail className="w-4 h-4" />
+                                                        </a>
+                                                        <button
+                                                            onClick={() => deleteRegistration(reg._id)}
+                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="text-center py-16">
+                                    <div className="w-20 h-20 mx-auto bg-gradient-to-br from-teal-100 to-teal-200 rounded-full flex items-center justify-center mb-4">
+                                        <UserCheck className="w-10 h-10 text-teal-500" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No registrations yet</h3>
+                                    <p className="text-gray-600">Registrations will appear here when users sign up for yatras.</p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
                 ) : (
                     /* User Management Section */
                     <motion.div
