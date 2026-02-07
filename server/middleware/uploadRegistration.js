@@ -4,10 +4,17 @@ const cloudinary = require('../config/cloudinary');
 
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-        folder: 'yatra-registrations',
-        allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'pdf'],
-        transformation: [{ width: 1200, height: 1200, crop: 'limit' }]
+    params: async (req, file) => {
+        // Auto-detect resource type (image, video, raw/pdf)
+        const isPdf = file.mimetype === 'application/pdf';
+
+        return {
+            folder: 'yatra-registrations',
+            resource_type: 'auto',
+            allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'pdf'],
+            // Apply transformation only for images
+            transformation: isPdf ? undefined : [{ width: 1200, height: 1200, crop: 'limit' }]
+        };
     }
 });
 

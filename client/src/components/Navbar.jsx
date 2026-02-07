@@ -74,13 +74,13 @@ const Navbar = () => {
     // Base navigation items
     const baseNavigationItems = [
         { path: '/', label: 'Home' },
+        { path: '/chalo-tirthyatra', label: 'Chalo Tirthyatra' },
         { path: '/about', label: 'About Us' },
         {
             label: 'Gauranga Vidhyapitha',
             dropdown: [
                 { path: '/gauranga-vidhyapitha', label: 'Gauranga Vidhyapitha' },
                 { path: '/accountability', label: 'Accountability' },
-                { path: '/chalo-tirthyatra', label: 'Chalo Tirthyatra' },
             ],
         },
         { path: '/contact', label: 'Contact Us' },

@@ -45,6 +45,7 @@ const AdminDashboard = () => {
     const [selectedRole, setSelectedRole] = useState('all');
     const [activeTab, setActiveTab] = useState('counselors'); // 'counselors', 'users', 'tirthyatra', 'registrations'
     const [selectedSubmission, setSelectedSubmission] = useState(null);
+    const [selectedRegistration, setSelectedRegistration] = useState(null);
     const [selectedUserForView, setSelectedUserForView] = useState(null);
     const [expandedCounselor, setExpandedCounselor] = useState(null);
     const [viewingUserSubmissions, setViewingUserSubmissions] = useState(null);
@@ -529,9 +530,9 @@ const AdminDashboard = () => {
                                                     <div className="text-sm">
                                                         <div className="font-bold text-gray-800">₹{(reg.totalAmount || 0).toLocaleString()}</div>
                                                         <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${reg.paymentStatus === 'verified' ? 'bg-green-100 text-green-700' :
-                                                                reg.paymentStatus === 'uploaded' ? 'bg-blue-100 text-blue-700' :
-                                                                    reg.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' :
-                                                                        'bg-yellow-100 text-yellow-700'
+                                                            reg.paymentStatus === 'uploaded' ? 'bg-blue-100 text-blue-700' :
+                                                                reg.paymentStatus === 'failed' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-yellow-100 text-yellow-700'
                                                             }`}>
                                                             {reg.paymentStatus || 'pending'}
                                                         </span>
@@ -579,6 +580,13 @@ const AdminDashboard = () => {
                                                         >
                                                             <Mail className="w-4 h-4" />
                                                         </a>
+                                                        <button
+                                                            onClick={() => setSelectedRegistration(reg)}
+                                                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                                            title="View Details"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
                                                         <button
                                                             onClick={() => deleteRegistration(reg._id)}
                                                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -962,6 +970,238 @@ const AdminDashboard = () => {
                     <p>Last updated: {new Date().toLocaleDateString()} • Total Records: {users.length}</p>
                 </motion.div>
             </motion.div>
+
+            {/* Registration Details Modal */}
+            <AnimatePresence>
+                {selectedRegistration && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-start justify-center p-4 overflow-y-auto pt-24"
+                        onClick={() => setSelectedRegistration(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-teal-50 to-white sticky top-0 z-10">
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900">Registration Details</h2>
+                                    <p className="text-sm text-gray-500">ID: {selectedRegistration._id}</p>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedRegistration(null)}
+                                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-gray-500" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                {/* Yatra Info */}
+                                <div className="bg-teal-50 rounded-xl p-4 border border-teal-100">
+                                    <h3 className="font-semibold text-teal-900 mb-2 flex items-center gap-2">
+                                        <MapPin className="w-4 h-4" />
+                                        Yatra Information
+                                    </h3>
+                                    <p className="text-lg font-bold text-gray-800">{selectedRegistration.yatraTitle}</p>
+                                    <p className="text-sm text-gray-600">
+                                        Registered on: {new Date(selectedRegistration.createdAt).toLocaleString()}
+                                    </p>
+                                </div>
+
+                                {/* Primary Contact */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <UserCircle className="w-4 h-4 text-purple-500" />
+                                        Primary Contact
+                                    </h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-500 uppercase">Email</p>
+                                            <p className="font-medium text-gray-900">{selectedRegistration.primaryEmail}</p>
+                                        </div>
+                                        <div className="bg-gray-50 p-3 rounded-lg">
+                                            <p className="text-xs text-gray-500 uppercase">Phone</p>
+                                            <p className="font-medium text-gray-900">{selectedRegistration.primaryPhone}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Payment Info */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4 text-emerald-500" />
+                                        Payment Details
+                                    </h3>
+                                    <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-100">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <div>
+                                                <p className="text-sm text-emerald-800">Total Amount</p>
+                                                <p className="text-2xl font-bold text-emerald-900">₹{(selectedRegistration.totalAmount || 0).toLocaleString()}</p>
+                                            </div>
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${selectedRegistration.paymentStatus === 'vertices' ? 'bg-green-200 text-green-800' :
+                                                selectedRegistration.paymentStatus === 'uploaded' ? 'bg-blue-200 text-blue-800' :
+                                                    'bg-yellow-200 text-yellow-800'
+                                                }`}>
+                                                {selectedRegistration.paymentStatus || 'Pending'}
+                                            </span>
+                                        </div>
+                                        {selectedRegistration.paymentScreenshot && (
+                                            <div>
+                                                <p className="text-xs text-emerald-700 mb-2 font-semibold">Payment Screenshot:</p>
+                                                <a
+                                                    href={selectedRegistration.paymentScreenshot}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="block relative group overflow-hidden rounded-lg border border-emerald-200"
+                                                >
+                                                    <img
+                                                        src={selectedRegistration.paymentScreenshot}
+                                                        alt="Payment Screenshot"
+                                                        className="w-full h-48 object-cover transition-transform group-hover:scale-105"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                        <span className="opacity-0 group-hover:opacity-100 bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-800 shadow-sm transition-opacity">
+                                                            Click to View Full
+                                                        </span>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Members */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-blue-500" />
+                                        Members ({selectedRegistration.members?.length || 0})
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {selectedRegistration.members?.map((member, idx) => (
+                                            <div key={idx} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                                                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                                                    <div>
+                                                        <h4 className="font-bold text-gray-800">{member.name}</h4>
+                                                        <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-3">
+                                                            <span>Age: {member.age}</span>
+                                                            <span>•</span>
+                                                            <span>Gender: {member.gender}</span>
+                                                            {member.mobileNumber && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span>Ph: {member.mobileNumber}</span>
+                                                                </>
+                                                            )}
+                                                            {member.city && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span>City: {member.city}</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {member.aadhaarCard && (
+                                                        <a
+                                                            href={member.aadhaarCard.replace(/^http:\/\//i, 'https://')}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            download={member.aadhaarCard.toLowerCase().endsWith('.pdf') ? "aadhaar.pdf" : "aadhaar.jpg"}
+                                                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition-colors self-start whitespace-nowrap"
+                                                        >
+                                                            <div className="w-8 h-8 rounded bg-blue-200/50 flex items-center justify-center">
+                                                                {member.aadhaarCard.toLowerCase().endsWith('.pdf') ? (
+                                                                    <Book className="w-4 h-4" />
+                                                                ) : (
+                                                                    <div className="w-full h-full overflow-hidden rounded">
+                                                                        <img src={member.aadhaarCard.replace(/^http:\/\//i, 'https://')} className="w-full h-full object-cover" alt="prev" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {member.aadhaarCard.toLowerCase().endsWith('.pdf') ? 'View PDF' : 'View Image'}
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {selectedRegistration.sameRoomPreference && (
+                                        <div className="mt-3 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm inline-flex items-center gap-2">
+                                            <Users className="w-4 h-4" />
+                                            Preference: All members in same room
+                                        </div>
+                                    )}
+                                    {selectedRegistration.accommodationNotes && (
+                                        <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                            <span className="font-medium text-gray-800">Accommodation Notes:</span> {selectedRegistration.accommodationNotes}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Travel & Package */}
+                                {(selectedRegistration.selectedTrain || selectedRegistration.selectedPackage) && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {selectedRegistration.selectedTrain && (
+                                            <div className="border border-gray-100 rounded-xl p-4">
+                                                <h3 className="font-semibold text-gray-900 mb-2">Train Preference</h3>
+                                                <div className="text-sm text-gray-600">
+                                                    <p><span className="font-medium">Train:</span> {selectedRegistration.selectedTrain.trainName}</p>
+                                                    <p><span className="font-medium">Number:</span> {selectedRegistration.selectedTrain.trainNumber}</p>
+                                                    <p><span className="font-medium">Class:</span> {selectedRegistration.selectedTrain.classCategory}</p>
+                                                    {selectedRegistration.selectedTrain.price && (
+                                                        <p><span className="font-medium">Price:</span> ₹{selectedRegistration.selectedTrain.price}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {selectedRegistration.selectedPackage && (
+                                            <div className="border border-gray-100 rounded-xl p-4">
+                                                <h3 className="font-semibold text-gray-900 mb-2">Package Selected</h3>
+                                                <div className="text-sm text-gray-600">
+                                                    <p className="font-medium text-purple-700">{selectedRegistration.selectedPackage.packageName}</p>
+                                                    {selectedRegistration.selectedPackage.pricingType && (
+                                                        <p>Type: {selectedRegistration.selectedPackage.pricingType}</p>
+                                                    )}
+                                                    {selectedRegistration.selectedPackage.pricePerPerson && (
+                                                        <p className="mt-1">Price per person: ₹{selectedRegistration.selectedPackage.pricePerPerson}</p>
+                                                    )}
+                                                    {selectedRegistration.selectedPackage.totalCost && (
+                                                        <p className="mt-1 font-bold">Total Cost: ₹{selectedRegistration.selectedPackage.totalCost}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Suggestions */}
+                                {selectedRegistration.suggestions && (
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-2">Suggestions/Notes</h3>
+                                        <div className="bg-orange-50 text-orange-800 p-4 rounded-xl text-sm border border-orange-100">
+                                            {selectedRegistration.suggestions}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
+                                <button
+                                    onClick={() => setSelectedRegistration(null)}
+                                    className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div >
     );
 };

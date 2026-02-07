@@ -43,17 +43,19 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
         notes: ''
     });
 
-    const [selectedTrain, setSelectedTrain] = useState(null);
-    const [selectedPackage, setSelectedPackage] = useState(null);
+    const [selectedTrain, setSelectedTrain] = useState(null); // { ...train, selectedClass: { category, price } }
+    const [selectedPackage, setSelectedPackage] = useState(null); // { ...pkg, selectedPricing: { type, perPerson, cost } }
     const [paymentScreenshot, setPaymentScreenshot] = useState(null);
     const [suggestions, setSuggestions] = useState('');
 
     // Parse train info from yatra
     const trainInfo = (() => {
         try {
-            return typeof yatra.trainInfo === 'string'
+            const parsed = typeof yatra.trainInfo === 'string'
                 ? JSON.parse(yatra.trainInfo)
                 : yatra.trainInfo || [];
+            // Ensure parsed is an array
+            return Array.isArray(parsed) ? parsed : [];
         } catch {
             return [];
         }
@@ -63,8 +65,26 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
     // Calculate total amount
     const calculateTotal = () => {
-        if (!selectedPackage) return 0;
-        return selectedPackage.pricePerPerson * members.length;
+        let total = 0;
+        const memberCount = members.length;
+
+        // Add Package Cost
+        if (selectedPackage && selectedPackage.selectedPricing) {
+            // Check if perPerson price exists, otherwise fallback
+            const price = parseFloat(selectedPackage.selectedPricing.perPerson || selectedPackage.selectedPricing.cost || 0);
+            total += price * memberCount;
+        } else if (selectedPackage && selectedPackage.pricePerPerson) {
+            // Fallback for simple structure
+            total += parseFloat(selectedPackage.pricePerPerson) * memberCount;
+        }
+
+        // Add Train Cost
+        if (selectedTrain && selectedTrain.selectedClass) {
+            const price = parseFloat(selectedTrain.selectedClass.price || 0);
+            total += price * memberCount;
+        }
+
+        return total;
     };
 
     // Add/Remove Members
@@ -151,15 +171,30 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             }))));
             formData.append('sameRoomPreference', accommodation.sameRoom);
             formData.append('accommodationNotes', accommodation.notes);
+
             if (selectedTrain) {
-                formData.append('selectedTrain', JSON.stringify(selectedTrain));
+                // Flatten structure for saving
+                const trainToSave = {
+                    trainName: selectedTrain.trainName,
+                    trainNumber: selectedTrain.trainNumber,
+                    classCategory: selectedTrain.selectedClass?.category,
+                    price: selectedTrain.selectedClass?.price
+                };
+                formData.append('selectedTrain', JSON.stringify(trainToSave));
             }
+
             if (selectedPackage) {
-                formData.append('selectedPackage', JSON.stringify({
-                    ...selectedPackage,
-                    totalCost: calculateTotal()
-                }));
+                // Flatten structure for saving
+                const pkgToSave = {
+                    packageName: selectedPackage.packageName,
+                    description: selectedPackage.description,
+                    pricingType: selectedPackage.selectedPricing?.type,
+                    pricePerPerson: selectedPackage.selectedPricing?.perPerson || selectedPackage.selectedPricing?.cost,
+                    totalCost: calculateTotal() // Or just package component
+                };
+                formData.append('selectedPackage', JSON.stringify(pkgToSave));
             }
+
             formData.append('totalAmount', calculateTotal());
             formData.append('suggestions', suggestions);
 
@@ -167,7 +202,9 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             if (paymentScreenshot) {
                 formData.append('paymentScreenshot', paymentScreenshot);
             }
-            members.forEach((member, index) => {
+
+            // Append Aadhaar files individually with same field name to create array on server
+            members.forEach((member) => {
                 if (member.aadhaarFile) {
                     formData.append('aadhaarCards', member.aadhaarFile);
                 }
@@ -461,98 +498,117 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                     </div>
                 );
 
-            case 5: // Train Selection
+            case 5: // Train Selection & Packages
                 return (
                     <div className="space-y-6">
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                            <h4 className="font-semibold text-blue-800 mb-2">Train Selection</h4>
-                            <p className="text-sm text-blue-700">
-                                Select your preferred train and class for the journey.
-                            </p>
-                        </div>
+                        {/* Train Selection */}
+                        <div className="space-y-4">
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                <h4 className="font-semibold text-blue-800 mb-2">Train Selection</h4>
+                                <p className="text-sm text-blue-700">
+                                    Select your preferred train and class. Prices are per person.
+                                </p>
+                            </div>
 
-                        {trainInfo.length > 0 ? (
-                            <div className="space-y-3">
-                                {trainInfo.map((train, index) => (
-                                    <label
-                                        key={index}
-                                        className={`block p-4 border-2 rounded-xl cursor-pointer transition-all ${selectedTrain?.trainName === train.trainName
-                                                ? 'border-teal-500 bg-teal-50'
-                                                : 'border-gray-200 hover:border-gray-300'
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <input
-                                                type="radio"
-                                                name="train"
-                                                checked={selectedTrain?.trainName === train.trainName}
-                                                onChange={() => setSelectedTrain(train)}
-                                                className="w-4 h-4 text-teal-600"
-                                            />
-                                            <div className="flex-1">
-                                                <div className="font-semibold text-gray-800">
-                                                    {train.trainName}
-                                                </div>
-                                                {train.trainNumber && (
-                                                    <div className="text-sm text-gray-500">
-                                                        Train No: {train.trainNumber}
-                                                    </div>
-                                                )}
+                            {trainInfo.length > 0 ? (
+                                <div className="space-y-4">
+                                    {trainInfo.map((train, index) => (
+                                        <div key={index} className="border-2 border-gray-100 rounded-xl p-4">
+                                            <div className="font-bold text-gray-800 text-lg mb-2">
+                                                {train.trainName} <span className="text-sm font-normal text-gray-500">({train.trainNumber})</span>
                                             </div>
+
+                                            {/* Render Classes */}
+                                            {train.classes && train.classes.length > 0 ? (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                                    {train.classes.map((cls, idx) => (
+                                                        <label
+                                                            key={idx}
+                                                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedTrain?.trainName === train.trainName && selectedTrain?.selectedClass?.category === cls.category
+                                                                    ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500'
+                                                                    : 'border-gray-200 hover:bg-gray-50'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="radio"
+                                                                    name="train-class"
+                                                                    checked={selectedTrain?.trainName === train.trainName && selectedTrain?.selectedClass?.category === cls.category}
+                                                                    onChange={() => setSelectedTrain({
+                                                                        ...train,
+                                                                        selectedClass: cls
+                                                                    })}
+                                                                    className="w-4 h-4 text-teal-600"
+                                                                />
+                                                                <span className="font-medium text-gray-700">{cls.category}</span>
+                                                            </div>
+                                                            <span className="font-bold text-teal-700">₹{cls.price}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-gray-500 italic">No class details available.</p>
+                                            )}
                                         </div>
-                                    </label>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 text-gray-500">
-                                <FaTrain className="mx-auto text-4xl mb-2 opacity-50" />
-                                <p>Train details will be shared separately.</p>
-                            </div>
-                        )}
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-xl">
+                                    <FaTrain className="mx-auto text-3xl mb-2 opacity-50" />
+                                    <p>Train details will be shared separately.</p>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Package Selection */}
                         {packages.length > 0 && (
-                            <>
-                                <h4 className="font-semibold text-gray-800 mt-6">Select Package</h4>
-                                <div className="space-y-3">
+                            <div className="space-y-4 pt-4 border-t border-gray-100">
+                                <h4 className="font-semibold text-gray-800 text-lg">Select Package</h4>
+                                <div className="space-y-4">
                                     {packages.map((pkg, index) => (
-                                        <label
-                                            key={index}
-                                            className={`block p-4 border-2 rounded-xl cursor-pointer transition-all ${selectedPackage?.packageName === pkg.packageName
-                                                    ? 'border-teal-500 bg-teal-50'
-                                                    : 'border-gray-200 hover:border-gray-300'
-                                                }`}
-                                        >
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <input
-                                                        type="radio"
-                                                        name="package"
-                                                        checked={selectedPackage?.packageName === pkg.packageName}
-                                                        onChange={() => setSelectedPackage({
-                                                            packageName: pkg.packageName,
-                                                            pricingType: pkg.pricingType,
-                                                            pricePerPerson: pkg.price || pkg.pricePerPerson
-                                                        })}
-                                                        className="w-4 h-4 text-teal-600"
-                                                    />
-                                                    <div>
-                                                        <div className="font-semibold text-gray-800">
-                                                            {pkg.packageName}
-                                                        </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            {pkg.pricingType}
-                                                        </div>
-                                                    </div>
+                                        <div key={index} className="border-2 border-gray-100 rounded-xl p-4">
+                                            <h5 className="font-bold text-gray-800 mb-1">{pkg.name}</h5>
+                                            <p className="text-xs text-gray-500 mb-3">{pkg.description}</p>
+
+                                            {/* Render Pricing Options */}
+                                            {pkg.pricing && pkg.pricing.length > 0 ? (
+                                                <div className="space-y-2">
+                                                    {pkg.pricing.map((price, idx) => (
+                                                        <label
+                                                            key={idx}
+                                                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedPackage?.packageName === pkg.name && selectedPackage?.selectedPricing?.type === price.type
+                                                                    ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500'
+                                                                    : 'border-gray-200 hover:bg-gray-50'
+                                                                }`}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <input
+                                                                    type="radio"
+                                                                    name="package-price"
+                                                                    checked={selectedPackage?.packageName === pkg.name && selectedPackage?.selectedPricing?.type === price.type}
+                                                                    onChange={() => setSelectedPackage({
+                                                                        packageName: pkg.name,
+                                                                        description: pkg.description,
+                                                                        selectedPricing: price
+                                                                    })}
+                                                                    className="w-4 h-4 text-teal-600"
+                                                                />
+                                                                <span className="font-medium text-gray-700">{price.type}</span>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className="font-bold text-teal-700 block">₹{price.perPerson}</span>
+                                                                <span className="text-xs text-gray-500">per person</span>
+                                                            </div>
+                                                        </label>
+                                                    ))}
                                                 </div>
-                                                <div className="text-lg font-bold text-teal-700">
-                                                    ₹{pkg.price || pkg.pricePerPerson}
-                                                </div>
-                                            </div>
-                                        </label>
+                                            ) : (
+                                                <p className="text-sm text-gray-500 italic">No pricing details available.</p>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
-                            </>
+                            </div>
                         )}
                     </div>
                 );
@@ -560,46 +616,61 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             case 6: // Payment
                 return (
                     <div className="space-y-6">
-                        {/* Total Amount */}
-                        <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-xl p-4 text-white">
-                            <div className="text-sm opacity-90 mb-1">Total Amount</div>
-                            <div className="text-3xl font-bold">
-                                ₹{calculateTotal().toLocaleString()}
-                            </div>
-                            <div className="text-sm opacity-75 mt-1">
-                                {members.length} member(s) × {selectedPackage?.packageName || 'Package'}
+                        {/* Summary Card */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
+                            <h4 className="font-bold text-gray-800 border-b pb-2 flex items-center justify-between">
+                                <span>Booking Summary</span>
+                                <span className="text-sm font-normal text-gray-500">{members.length} Traveler(s)</span>
+                            </h4>
+
+                            {/* Train Summary */}
+                            {selectedTrain && selectedTrain.selectedClass && (
+                                <div className="flex justify-between items-start text-sm">
+                                    <div>
+                                        <p className="font-semibold text-gray-700">Train: {selectedTrain.trainName}</p>
+                                        <p className="text-gray-500">{selectedTrain.selectedClass.category}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-medium">₹{selectedTrain.selectedClass.price} × {members.length}</p>
+                                        <p className="font-bold text-gray-800">₹{(parseFloat(selectedTrain.selectedClass.price) * members.length).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Package Summary */}
+                            {selectedPackage && selectedPackage.selectedPricing && (
+                                <div className="flex justify-between items-start text-sm border-t border-dashed pt-2">
+                                    <div>
+                                        <p className="font-semibold text-gray-700">Package: {selectedPackage.packageName}</p>
+                                        <p className="text-gray-500">{selectedPackage.selectedPricing.type}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-medium">₹{selectedPackage.selectedPricing.perPerson} × {members.length}</p>
+                                        <p className="font-bold text-gray-800">₹{(parseFloat(selectedPackage.selectedPricing.perPerson) * members.length).toLocaleString()}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Total */}
+                            <div className="flex justify-between items-center border-t-2 border-gray-100 pt-3 mt-2">
+                                <span className="font-bold text-gray-800 text-lg">Total Amount</span>
+                                <span className="font-bold text-teal-600 text-2xl">₹{calculateTotal().toLocaleString()}</span>
                             </div>
                         </div>
 
                         {/* QR Code */}
-                        <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
-                            <div className="text-sm text-red-600 font-semibold mb-2">QR CODE</div>
-                            <div className="text-sm text-gray-600 mb-4">Gpay Num: 7600156255</div>
-
-                            <div className="bg-gray-50 rounded-xl p-4 inline-block">
-                                <div className="flex items-center justify-center gap-2 mb-3">
-                                    <span className="text-xl font-bold text-gray-800">Gaurangas Group</span>
-                                </div>
-                                {/* QR Code Placeholder - Replace with actual QR image */}
-                                <div className="w-48 h-48 mx-auto bg-white p-2 rounded-lg border">
-                                    <img
-                                        src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=moib1208-2@okhdfcbank&pn=GaurangasGroup"
-                                        alt="Payment QR Code"
-                                        className="w-full h-full"
-                                    />
-                                </div>
-                                <p className="text-sm text-gray-600 mt-3">UPI ID: moib1208-2@okhdfcbank</p>
-                            </div>
-                            <p className="text-sm text-gray-500 mt-4">Scan to pay with any UPI app</p>
-                        </div>
-
-                        {/* Payment Screenshot Upload */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Upload Payment Screenshot
-                            </label>
-                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-all">
-                                <div className="flex flex-col items-center justify-center">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 mt-4 text-center w-full">
+                            Upload Payment Screenshot
+                        </label>
+                        <div className="flex flex-col items-center">
+                            <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-all relative">
+                                <input
+                                    type="file"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    accept="image/*"
+                                    onChange={(e) => setPaymentScreenshot(e.target.files[0])}
+                                />
+                                <div className="flex flex-col items-center justify-center pointer-events-none">
                                     {paymentScreenshot ? (
                                         <>
                                             <FaCheckCircle className="text-green-500 text-2xl mb-1" />
@@ -617,13 +688,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                         </>
                                     )}
                                 </div>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => setPaymentScreenshot(e.target.files[0])}
-                                />
-                            </label>
+                            </div>
                         </div>
                     </div>
                 );
@@ -743,8 +808,8 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                         {STEPS.map((step, index) => (
                             <div key={step.id} className="flex items-center">
                                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${currentStep >= step.id
-                                        ? 'bg-white text-teal-700'
-                                        : 'bg-teal-500/50 text-white/70'
+                                    ? 'bg-white text-teal-700'
+                                    : 'bg-teal-500/50 text-white/70'
                                     }`}>
                                     {step.id}
                                 </div>
@@ -781,8 +846,8 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                         onClick={prevStep}
                         disabled={currentStep === 1}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${currentStep === 1
-                                ? 'text-gray-400 cursor-not-allowed'
-                                : 'text-gray-700 hover:bg-gray-100'
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-gray-700 hover:bg-gray-100'
                             }`}
                     >
                         <FaChevronLeft /> Previous
@@ -801,8 +866,8 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                             onClick={nextStep}
                             disabled={!validateStep()}
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${validateStep()
-                                    ? 'bg-teal-600 text-white hover:bg-teal-700'
-                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                ? 'bg-teal-600 text-white hover:bg-teal-700'
+                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                 }`}
                         >
                             Next <FaChevronRight />
