@@ -526,7 +526,7 @@ const Home = () => {
                                 image: sadhanaReportImg,
                                 desc: 'Join our Accountability WhatsApp Group & track your daily Sadhana with under guidance senior devotees.',
                                 button: 'Join Now',
-                                link: 'https://api.whatsapp.com/send/?phone=917990200618&text&type=phone_number&app_absent=0'
+                                link: 'https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0'
                             }
                         ].map((offering, index) => (
                             <motion.div
@@ -1343,10 +1343,10 @@ const Home = () => {
                                     <ContactCard
                                         icon={<FaPhoneAlt />}
                                         label="PHONE"
-                                        value="+91 7990200618"
+                                        value="+91 7600156255"
                                         delay={0.4}
                                         color="#1F7A8C"
-                                        href="tel:+917990200618"
+                                        href="tel:+917600156255"
                                     />
 
                                     {/* Email Card */}
@@ -1409,7 +1409,7 @@ const Home = () => {
                                         </p>
 
                                         <a
-                                            href="https://api.whatsapp.com/send/?phone=917990200618&text&type=phone_number&app_absent=0"
+                                            href="https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             style={{

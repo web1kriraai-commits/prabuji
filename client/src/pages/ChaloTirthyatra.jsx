@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     FaWhatsapp, FaTrain, FaMapMarkerAlt, FaCalendarAlt, FaUserFriends,
     FaPrayingHands, FaClock, FaUtensils, FaBed, FaExclamationCircle,
-    FaCheckCircle, FaTimesCircle, FaInfoCircle, FaRoute, FaUserPlus, FaTimes
+    FaCheckCircle, FaTimesCircle, FaInfoCircle, FaRoute, FaUserPlus, FaTimes, FaEnvelope
 } from 'react-icons/fa';
 import tem2 from '../assets/image/temp2.jpg';
 import api from '../lib/api';
 import MultiStepRegistrationForm from '../components/MultiStepRegistrationForm';
+import ContactModal from '../components/ContactModal';
 
 const ChaloTirthyatra = () => {
     const [yatras, setYatras] = useState([]);
@@ -74,6 +75,24 @@ const ChaloTirthyatra = () => {
 const YatraCard = ({ yatra, index }) => {
     const [activeTab, setActiveTab] = useState('overview');
     const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [showContactModal, setShowContactModal] = useState(false);
+
+    // Auto-open modal if there's saved registration data
+    useEffect(() => {
+        const savedData = localStorage.getItem(`yatra_registration_${yatra._id}`);
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                // Only auto-open if there's actual user data (not just initial state)
+                if (parsed.primaryContact?.email || parsed.primaryContact?.phone ||
+                    (parsed.members?.[0]?.name && parsed.members[0].name !== '')) {
+                    setShowRegisterModal(true);
+                }
+            } catch (e) {
+                console.error('Error checking saved data:', e);
+            }
+        }
+    }, [yatra._id]);
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <FaInfoCircle /> },
@@ -91,11 +110,11 @@ const YatraCard = ({ yatra, index }) => {
             className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
         >
             {/* Yatra Header Image With Overlay */}
-            <div className="relative w-full h-[250px] md:h-[400px] group overflow-hidden bg-gray-900 shadow-xl">
+            <div className="relative w-full group overflow-hidden bg-gray-900 shadow-xl">
                 <img
                     src={yatra.image || tem2}
                     alt={yatra.title}
-                    className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-1000"
+                    className="w-full h-auto object-contain hover:scale-105 transition-transform duration-1000"
                     onError={(e) => { e.target.src = tem2; }}
                 />
                 {/* Register Button on Image */}
@@ -139,6 +158,12 @@ const YatraCard = ({ yatra, index }) => {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Contact Modal */}
+            <ContactModal
+                isOpen={showContactModal}
+                onClose={() => setShowContactModal(false)}
+            />
 
             {/* Navigation Tabs */}
             <div className="flex overflow-x-auto border-b border-gray-100 bg-gray-50 px-4 md:px-8 pt-2 scrollbar-hide">
@@ -184,8 +209,14 @@ const YatraCard = ({ yatra, index }) => {
                         </div>
                     )}
                 </div>
-                <div className="w-full md:w-auto flex justify-center">
+                <div className="w-full md:w-auto flex flex-col md:flex-row gap-4 justify-center">
                     <WhatsAppButton link={yatra.whatsappLink} />
+                    <button
+                        onClick={() => setShowContactModal(true)}
+                        className="inline-flex items-center justify-center gap-2 bg-white text-teal-700 border-2 border-teal-700 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-teal-50 transition-all transform hover:-translate-y-1"
+                    >
+                        <FaEnvelope size={20} /> Contact Us
+                    </button>
                 </div>
             </div>
         </motion.div>
@@ -430,7 +461,7 @@ const GuidelinesSection = ({ instructions }) => (
 
 const WhatsAppButton = ({ link }) => (
     <a
-        href={link || "https://api.whatsapp.com/send/?phone=917990200618&text&type=phone_number&app_absent=0"}
+        href={link || "https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0"}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 bg-[#25D366] text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl hover:bg-[#20bd5a] transition-all transform hover:-translate-y-1"

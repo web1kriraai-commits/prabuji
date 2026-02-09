@@ -27,7 +27,8 @@ import {
     MapPin,
     Phone,
     Mail,
-    UserCheck
+    UserCheck,
+    MessageSquare
 } from 'lucide-react';
 import LogoutButton from '../components/LogoutButton';
 import TirthYatraManagement from '../components/TirthYatraManagement';
@@ -38,14 +39,16 @@ const AdminDashboard = () => {
     const [counselors, setCounselors] = useState([]);
     const [accountability, setAccountability] = useState([]);
     const [yatraRegistrations, setYatraRegistrations] = useState([]);
+    const [contactMessages, setContactMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [counselorSearchTerm, setCounselorSearchTerm] = useState('');
     const [selectedRole, setSelectedRole] = useState('all');
-    const [activeTab, setActiveTab] = useState('counselors'); // 'counselors', 'users', 'tirthyatra', 'registrations'
+    const [activeTab, setActiveTab] = useState('counselors'); // 'counselors', 'users', 'tirthyatra', 'registrations', 'messages'
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [selectedRegistration, setSelectedRegistration] = useState(null);
+    const [selectedMessage, setSelectedMessage] = useState(null);
     const [selectedUserForView, setSelectedUserForView] = useState(null);
     const [expandedCounselor, setExpandedCounselor] = useState(null);
     const [viewingUserSubmissions, setViewingUserSubmissions] = useState(null);
@@ -53,6 +56,7 @@ const AdminDashboard = () => {
     const [submissionStartDate, setSubmissionStartDate] = useState('');
     const [submissionEndDate, setSubmissionEndDate] = useState('');
     const [registrationSearchTerm, setRegistrationSearchTerm] = useState('');
+    const [messageSearchTerm, setMessageSearchTerm] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -68,7 +72,8 @@ const AdminDashboard = () => {
         fetchCounselors();
         fetchAllAccountability();
         fetchYatraRegistrations();
-    }, []);
+        fetchContactMessages();
+    }, []);;
 
     const fetchUsers = async () => {
         try {
@@ -131,7 +136,36 @@ const AdminDashboard = () => {
         }
     };
 
-    // Filter yatra registrations by search
+    const fetchContactMessages = async () => {
+        try {
+            const response = await api.get('/contact');
+            setContactMessages(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error('Error fetching contact messages:', error);
+            setContactMessages([]);
+        }
+    };
+
+    const updateMessageStatus = async (msgId, status) => {
+        try {
+            await api.put(`/contact/${msgId}`, { status });
+            fetchContactMessages();
+        } catch (error) {
+            console.error('Error updating message status:', error);
+        }
+    };
+
+    const deleteMessage = async (msgId) => {
+        if (!window.confirm('Are you sure you want to delete this message?')) return;
+        try {
+            await api.delete(`/contact/${msgId}`);
+            fetchContactMessages();
+        } catch (error) {
+            console.error('Error deleting message:', error);
+        }
+    };
+
+    // Filter contact messages by search
     const filteredRegistrations = yatraRegistrations.filter(reg => {
         if (!registrationSearchTerm) return true;
         const search = registrationSearchTerm.toLowerCase();
@@ -140,6 +174,15 @@ const AdminDashboard = () => {
             reg.primaryEmail?.toLowerCase().includes(search) ||
             reg.primaryPhone?.includes(search) ||
             reg.yatraTitle?.toLowerCase().includes(search);
+    });
+
+    // Filter contact messages by search
+    const filteredMessages = contactMessages.filter(msg => {
+        if (!messageSearchTerm) return true;
+        const search = messageSearchTerm.toLowerCase();
+        return msg.name?.toLowerCase().includes(search) ||
+            msg.email?.toLowerCase().includes(search) ||
+            msg.message?.toLowerCase().includes(search);
     });
 
     // Helper function to get user count for counselor
@@ -418,6 +461,20 @@ const AdminDashboard = () => {
                             </span>
                         )}
                     </button>
+                    <button
+                        onClick={() => setActiveTab('messages')}
+                        className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap flex items-center gap-2 ${activeTab === 'messages'
+                            ? 'border-blue-500 text-blue-700'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        Contact Messages
+                        {contactMessages.length > 0 && (
+                            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                                {contactMessages.length}
+                            </span>
+                        )}
+                    </button>
                 </div>
 
                 {activeTab === 'tirthyatra' ? (
@@ -607,6 +664,137 @@ const AdminDashboard = () => {
                                     </div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-2">No registrations yet</h3>
                                     <p className="text-gray-600">Registrations will appear here when users sign up for yatras.</p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                ) : activeTab === 'messages' ? (
+                    /* Contact Messages Section */
+                    <motion.div
+                        className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.4 }}
+                    >
+                        <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white">
+                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Contact Messages</h2>
+                                    <p className="text-gray-600">View and manage contact form submissions</p>
+                                </div>
+                                <div className="relative flex-1 max-w-md">
+                                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by name, email, or message..."
+                                        value={messageSearchTerm}
+                                        onChange={(e) => setMessageSearchTerm(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                            {filteredMessages.length > 0 ? (
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Contact</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Message</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Date</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Status</th>
+                                            <th className="text-left py-4 px-6 font-semibold text-gray-700 text-sm uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {filteredMessages.map((msg) => (
+                                            <motion.tr
+                                                key={msg._id}
+                                                className="hover:bg-gray-50 transition-colors"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                            >
+                                                <td className="py-4 px-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold">
+                                                            {msg.name?.charAt(0) || 'U'}
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="font-semibold text-gray-900">{msg.name}</h4>
+                                                            <div className="flex items-center gap-1 text-gray-500 text-sm">
+                                                                <Mail className="w-3 h-3" />
+                                                                {msg.email}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <p className="text-gray-700 line-clamp-2">
+                                                        {msg.message}
+                                                    </p>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="text-xs text-gray-500">
+                                                        {new Date(msg.createdAt).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <select
+                                                        value={msg.status}
+                                                        onChange={(e) => updateMessageStatus(msg._id, e.target.value)}
+                                                        className={`text-sm font-medium px-3 py-1.5 rounded-lg border-0 cursor-pointer ${msg.status === 'new' ? 'bg-yellow-100 text-yellow-800' :
+                                                            msg.status === 'read' ? 'bg-blue-100 text-blue-800' :
+                                                                'bg-green-100 text-green-800'
+                                                            }`}
+                                                    >
+                                                        <option value="new">New</option>
+                                                        <option value="read">Read</option>
+                                                        <option value="resolved">Resolved</option>
+                                                    </select>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <div className="flex items-center gap-2">
+                                                        <a
+                                                            href={`mailto:${msg.email}`}
+                                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Reply via Email"
+                                                        >
+                                                            <Mail className="w-4 h-4" />
+                                                        </a>
+                                                        <button
+                                                            onClick={() => setSelectedMessage(msg)}
+                                                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                                            title="View Full Message"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteMessage(msg._id)}
+                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </motion.tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <div className="text-center py-16">
+                                    <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mb-4">
+                                        <Mail className="w-10 h-10 text-blue-500" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No messages yet</h3>
+                                    <p className="text-gray-600">Contact form submissions will appear here.</p>
                                 </div>
                             )}
                         </div>
@@ -1193,6 +1381,128 @@ const AdminDashboard = () => {
                             <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end">
                                 <button
                                     onClick={() => setSelectedRegistration(null)}
+                                    className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* Contact Message Detail Modal */}
+                {selectedMessage && (
+                    <motion.div
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+                        style={{ paddingTop: '90px' }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedMessage(null)}
+                    >
+                        <motion.div
+                            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-y-auto"
+                            style={{ maxHeight: 'calc(100vh - 120px)' }}
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Contact Message</h2>
+                                        <p className="text-sm text-gray-600">
+                                            Received on {new Date(selectedMessage.createdAt).toLocaleString('en-US', {
+                                                month: 'long',
+                                                day: 'numeric',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedMessage(null)}
+                                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                    >
+                                        <X className="w-5 h-5 text-gray-500" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6 space-y-6">
+                                {/* Contact Info */}
+                                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-5 border border-blue-100">
+                                    <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                        <UserCircle className="w-5 h-5 text-blue-500" />
+                                        Contact Information
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0">
+                                                {selectedMessage.name?.charAt(0) || 'U'}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-gray-900">{selectedMessage.name}</p>
+                                                <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                                    <Mail className="w-4 h-4" />
+                                                    <a href={`mailto:${selectedMessage.email}`} className="hover:text-blue-600 transition-colors">
+                                                        {selectedMessage.email}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Message Content */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <MessageSquare className="w-5 h-5 text-purple-500" />
+                                        Message
+                                    </h3>
+                                    <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+                                        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                                            {selectedMessage.message}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Status */}
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-3">Status</h3>
+                                    <select
+                                        value={selectedMessage.status}
+                                        onChange={(e) => {
+                                            updateMessageStatus(selectedMessage._id, e.target.value);
+                                            setSelectedMessage({ ...selectedMessage, status: e.target.value });
+                                        }}
+                                        className={`w-full text-sm font-medium px-4 py-3 rounded-xl border-0 cursor-pointer ${selectedMessage.status === 'new' ? 'bg-yellow-100 text-yellow-800' :
+                                            selectedMessage.status === 'read' ? 'bg-blue-100 text-blue-800' :
+                                                'bg-green-100 text-green-800'
+                                            }`}
+                                    >
+                                        <option value="new">New</option>
+                                        <option value="read">Read</option>
+                                        <option value="resolved">Resolved</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between">
+                                <a
+                                    href={`mailto:${selectedMessage.email}`}
+                                    className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    Reply via Email
+                                </a>
+                                <button
+                                    onClick={() => setSelectedMessage(null)}
                                     className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
                                 >
                                     Close

@@ -7,7 +7,7 @@ const storage = new CloudinaryStorage({
     params: {
         folder: 'tirth-yatra',
         allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-        transformation: [{ width: 1920, height: 1080, crop: 'limit' }] // Resize huge images but keep banner quality
+        // transformation: [{ width: 1000, height: 1000, crop: 'limit' }] // Optional: Resize on upload
     }
 });
 

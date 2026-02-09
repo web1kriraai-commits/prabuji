@@ -27,8 +27,7 @@ const TirthYatraManagement = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [notification, setNotification] = useState({ type: '', message: '' });
-    const [imageMode, setImageMode] = useState('url'); // 'url' or 'upload'
-    const [selectedFile, setSelectedFile] = useState(null);
+
 
     const initialFormState = {
         title: '',
@@ -44,7 +43,7 @@ const TirthYatraManagement = () => {
         description: '',
         ticketPrice: '', // Base price or range description
         whatsappLink: '',
-        trainInfo: [], // [{ trainName: '', trainNumber: '', classes: [{ category: 'AC', price: 0 }] }]
+        trainInfo: [], // [{ trainName: '', trainNumber: '', classes: [{ category: 'AC', price: 0 }], routes: [] }]
         itinerary: [], // [{ day: 1, date: '', schedule: [], meals: {} }]
         packages: [], // [{ name: '', description: '', pricing: [] }]
         instructions: [], // ['String']
@@ -131,17 +130,20 @@ const TirthYatraManagement = () => {
         }
     }, [formData.startDate, formData.endDate]);
 
-    const handleFileChange = (e) => {
-        if (e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
-        }
-    };
+
 
     // Train Details Management
     const addTrain = () => {
         setFormData(prev => ({
             ...prev,
-            trainInfo: [...(prev.trainInfo || []), { trainName: '', trainNumber: '', from: '', to: '', classes: [{ category: 'AC', price: '' }] }]
+            trainInfo: [...(prev.trainInfo || []), {
+                trainName: '',
+                trainNumber: '',
+                from: '',
+                to: '',
+                classes: [{ category: 'AC', price: '' }],
+                routes: [] // Array of { from: '', to: '', classes: [] }
+            }]
         }));
     };
 
@@ -172,6 +174,50 @@ const TirthYatraManagement = () => {
     const updateClass = (trainIndex, classIndex, field, value) => {
         const newTrains = [...formData.trainInfo];
         newTrains[trainIndex].classes[classIndex][field] = value;
+        setFormData({ ...formData, trainInfo: newTrains });
+    };
+
+    // Route Management
+    const addRoute = (trainIndex) => {
+        const newTrains = [...formData.trainInfo];
+        // Initialize route with empty classes or copy from main/default classes? Let's start empty or with one default
+        newTrains[trainIndex].routes = newTrains[trainIndex].routes || [];
+        newTrains[trainIndex].routes.push({
+            from: '',
+            to: '',
+            classes: [{ category: 'AC', price: '' }]
+        });
+        setFormData({ ...formData, trainInfo: newTrains });
+    };
+
+    const removeRoute = (trainIndex, routeIndex) => {
+        const newTrains = [...formData.trainInfo];
+        newTrains[trainIndex].routes.splice(routeIndex, 1);
+        setFormData({ ...formData, trainInfo: newTrains });
+    };
+
+    const updateRoute = (trainIndex, routeIndex, field, value) => {
+        const newTrains = [...formData.trainInfo];
+        newTrains[trainIndex].routes[routeIndex][field] = value;
+        setFormData({ ...formData, trainInfo: newTrains });
+    };
+
+    // Route Class Management
+    const addRouteClass = (trainIndex, routeIndex) => {
+        const newTrains = [...formData.trainInfo];
+        newTrains[trainIndex].routes[routeIndex].classes.push({ category: 'AC', price: '' });
+        setFormData({ ...formData, trainInfo: newTrains });
+    };
+
+    const removeRouteClass = (trainIndex, routeIndex, classIndex) => {
+        const newTrains = [...formData.trainInfo];
+        newTrains[trainIndex].routes[routeIndex].classes.splice(classIndex, 1);
+        setFormData({ ...formData, trainInfo: newTrains });
+    };
+
+    const updateRouteClass = (trainIndex, routeIndex, classIndex, field, value) => {
+        const newTrains = [...formData.trainInfo];
+        newTrains[trainIndex].routes[routeIndex].classes[classIndex][field] = value;
         setFormData({ ...formData, trainInfo: newTrains });
     };
 
@@ -342,6 +388,13 @@ const TirthYatraManagement = () => {
             classes: train.classes.map(cls => ({
                 ...cls,
                 price: sanitizeNumber(cls.price)
+            })),
+            routes: (train.routes || []).map(route => ({
+                ...route,
+                classes: route.classes.map(cls => ({
+                    ...cls,
+                    price: sanitizeNumber(cls.price)
+                }))
             }))
         }));
 
@@ -362,15 +415,10 @@ const TirthYatraManagement = () => {
         data.append('excludes', JSON.stringify(formData.excludes || []));
 
         // 3. Append Image LAST to ensure Multer parses body fields first
-        if (imageMode === 'upload' && selectedFile) {
-            data.append('image', selectedFile);
-            // If uploading a file, clear any 'image' text field that might be sent as body
-            // Actually, if we append 'image' as file, we shouldn't also append 'image' as string.
-            // But we didn't append image string above in step 1 loop.
-        } else if (imageMode === 'url' && formData.image) {
+        // 3. Append Image LAST to ensure Multer parses body fields first
+        if (formData.image) {
             data.append('image', formData.image);
-        } else if (imageMode === 'url' && !formData.image) {
-            // Explicitly send empty string if user cleared it?
+        } else {
             data.append('image', '');
         }
 
@@ -403,6 +451,39 @@ const TirthYatraManagement = () => {
         } catch (error) {
             console.error('Error saving yatra:', error);
             showNotification('error', 'Failed to save Tirth Yatra');
+        }
+    };
+
+    const [uploading, setUploading] = useState(false);
+
+    const handleDirectUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        setUploading(true);
+        try {
+            // Explicitly unset 'Content-Type' to allow browser to set 'multipart/form-data' with boundary
+            // This overrides any default 'application/json' set in the api instance
+            const res = await api.post('/tirthyatra/upload', formData, {
+                headers: {
+                    'Content-Type': undefined
+                }
+            });
+
+            setFormData(prev => ({ ...prev, image: res.data.imageUrl }));
+            showNotification('success', 'Image uploaded successfully');
+        } catch (error) {
+            console.error('Upload failed detailed:', error);
+            console.error('Response data:', error.response?.data);
+            console.error('Response status:', error.response?.status);
+            showNotification('error', `Failed to upload image: ${error.response?.data?.message || error.message}`);
+        } finally {
+            setUploading(false);
+            // Reset file input
+            e.target.value = '';
         }
     };
 
@@ -460,7 +541,6 @@ const TirthYatraManagement = () => {
             startDate: yatra.startDate ? yatra.startDate.split('T')[0] : '',
             endDate: yatra.endDate ? yatra.endDate.split('T')[0] : ''
         });
-        setImageMode('url'); // Default to URL. If user wants to upload new one, they will switch.
         // Ensure image field is set in formData if it exists, so if they save without changing, we send the URL.
         if (yatra.image) {
             setFormData(prev => ({ ...prev, image: yatra.image }));
@@ -486,8 +566,7 @@ const TirthYatraManagement = () => {
         setIsFormOpen(false);
         setEditingId(null);
         setFormData(initialFormState);
-        setSelectedFile(null);
-        setImageMode('url');
+
     };
 
     return (
@@ -656,52 +735,52 @@ const TirthYatraManagement = () => {
                                     </div>
 
                                     {/* Image Upload/URL */}
+                                    {/* Image Upload */}
                                     <div className="space-y-4">
                                         <label className="text-sm font-semibold text-gray-700">Yatra Image</label>
-                                        <div className="flex gap-4 mb-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setImageMode('url')}
-                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${imageMode === 'url' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'
-                                                    }`}
-                                            >
-                                                <Link size={16} /> Image URL
-                                            </button>
-                                        </div>
 
-                                        {imageMode === 'url' ? (
-                                            <div className="flex gap-2">
-                                                <input
-                                                    name="image"
-                                                    value={formData.image}
-                                                    onChange={handleInputChange}
-                                                    placeholder="https://example.com/image.jpg"
-                                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none"
-                                                />
-                                                {formData.image && (
-                                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0">
-                                                        <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center bg-gray-50 hover:bg-white hover:border-orange-300 transition-colors">
-                                                <input
-                                                    type="file"
-                                                    onChange={handleFileChange}
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    id="file-upload"
-                                                />
-                                                <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                                                    <Upload className="w-8 h-8 text-gray-400" />
-                                                    <span className="text-gray-600 font-medium">
-                                                        {selectedFile ? selectedFile.name : 'Click to upload image'}
-                                                    </span>
-                                                    <span className="text-xs text-gray-400">JPG, PNG, WEBP up to 5MB</span>
-                                                </label>
+                                        {formData.image && (
+                                            <div className="relative w-full h-64 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 mb-4 group">
+                                                <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData({ ...formData, image: '' })}
+                                                        className="bg-white text-red-600 px-4 py-2 rounded-lg font-medium shadow-lg flex items-center gap-2 hover:bg-red-50"
+                                                    >
+                                                        <Trash2 size={18} /> Remove Image
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
+
+                                        <div className="flex gap-4">
+                                            <div className="relative w-full">
+                                                <input
+                                                    type="file"
+                                                    id="direct-upload"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={handleDirectUpload}
+                                                    disabled={uploading}
+                                                />
+                                                <label
+                                                    htmlFor="direct-upload"
+                                                    className={`flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-medium transition-colors cursor-pointer border-2 border-dashed border-gray-300 hover:border-orange-500 hover:bg-orange-50 w-full ${uploading ? 'bg-gray-100 text-gray-400' : 'bg-white text-gray-600'}`}
+                                                >
+                                                    {uploading ? (
+                                                        <>
+                                                            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                                                            Uploading...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Upload size={20} /> {formData.image ? 'Change Image' : 'Upload Image'}
+                                                        </>
+                                                    )}
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {/* Date & Travel */}
@@ -836,44 +915,85 @@ const TirthYatraManagement = () => {
                                                     />
                                                 </div>
 
-                                                {/* Classes & Prices */}
-                                                <div className="space-y-2">
-                                                    <label className="text-xs font-semibold text-gray-400">Classes & Pricing</label>
-                                                    {train.classes.map((cls, cIndex) => (
-                                                        <div key={cIndex} className="flex flex-col md:flex-row gap-2 md:items-center">
-                                                            <select
-                                                                value={cls.category}
-                                                                onChange={(e) => updateClass(tIndex, cIndex, 'category', e.target.value)}
-                                                                className="w-full md:w-1/3 px-3 py-2 rounded-lg border border-gray-200 text-sm"
-                                                            >
-                                                                <option value="1 AC">1 AC</option>
-                                                                <option value="2 AC">2 AC</option>
-                                                                <option value="3 AC">3 AC</option>
-                                                                <option value="AC">AC (General)</option>
-                                                                <option value="CC">Chair Car</option>
-                                                                <option value="SL">Sleeper</option>
-                                                                <option value="2S">Second Sitting</option>
-                                                                <option value="Gn">General</option>
-                                                            </select>
-                                                            <input
-                                                                type="number"
-                                                                placeholder="Price (₹)"
-                                                                value={cls.price}
-                                                                onChange={(e) => updateClass(tIndex, cIndex, 'price', e.target.value)}
-                                                                className="w-full md:w-1/3 px-3 py-2 rounded-lg border border-gray-200 text-sm"
-                                                            />
-                                                            <button type="button" onClick={() => removeClass(tIndex, cIndex)} className="text-gray-400 hover:text-red-500 self-end md:self-auto">
-                                                                <X size={14} />
-                                                            </button>
+                                                {/* Classes & Prices - REMOVED */}
+
+
+                                                {/* Routes Section */}
+                                                <div className="space-y-3 pt-3 border-t border-gray-100">
+                                                    <div className="flex justify-between items-center">
+                                                        <label className="text-xs font-semibold text-gray-500 uppercase">Specific Routes (Optional)</label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => addRoute(tIndex)}
+                                                            className="text-xs text-teal-600 font-medium hover:text-teal-700 flex items-center gap-1"
+                                                        >
+                                                            <Plus size={12} /> Add Route
+                                                        </button>
+                                                    </div>
+
+                                                    {(train.routes || []).map((route, rIndex) => (
+                                                        <div key={rIndex} className="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-xs font-bold text-gray-400">Route #{rIndex + 1}</span>
+                                                                <button type="button" onClick={() => removeRoute(tIndex, rIndex)} className="text-red-400 hover:text-red-600">
+                                                                    <X size={14} />
+                                                                </button>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                <input
+                                                                    placeholder="From (e.g. Mumbai)"
+                                                                    value={route.from}
+                                                                    onChange={(e) => updateRoute(tIndex, rIndex, 'from', e.target.value)}
+                                                                    className="w-full px-2 py-2 rounded border border-gray-300 text-sm"
+                                                                />
+                                                                <input
+                                                                    placeholder="To (e.g. Surat)"
+                                                                    value={route.to}
+                                                                    onChange={(e) => updateRoute(tIndex, rIndex, 'to', e.target.value)}
+                                                                    className="w-full px-2 py-2 rounded border border-gray-300 text-sm"
+                                                                />
+                                                            </div>
+
+                                                            {/* Route Classes */}
+                                                            <div className="space-y-2 pl-2 border-l-2 border-teal-100">
+                                                                {route.classes.map((cls, rcIndex) => (
+                                                                    <div key={rcIndex} className="flex gap-2 items-center">
+                                                                        <select
+                                                                            value={cls.category}
+                                                                            onChange={(e) => updateRouteClass(tIndex, rIndex, rcIndex, 'category', e.target.value)}
+                                                                            className="w-1/3 px-2 py-1 rounded border border-gray-300 text-sm"
+                                                                        >
+                                                                            <option value="AC">AC (Gen)</option>
+                                                                            <option value="1 AC">1 AC</option>
+                                                                            <option value="2 AC">2 AC</option>
+                                                                            <option value="3 AC">3 AC</option>
+                                                                            <option value="CC">Chair Car</option>
+                                                                            <option value="SL">Sleeper</option>
+                                                                            <option value="2S">2nd Sit</option>
+                                                                            <option value="Gn">General</option>
+                                                                        </select>
+                                                                        <input
+                                                                            type="number"
+                                                                            placeholder="Price"
+                                                                            value={cls.price}
+                                                                            onChange={(e) => updateRouteClass(tIndex, rIndex, rcIndex, 'price', e.target.value)}
+                                                                            className="w-1/3 px-2 py-1 rounded border border-gray-300 text-sm"
+                                                                        />
+                                                                        <button type="button" onClick={() => removeRouteClass(tIndex, rIndex, rcIndex)} className="text-gray-400 hover:text-red-500">
+                                                                            <X size={12} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => addRouteClass(tIndex, rIndex)}
+                                                                    className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1"
+                                                                >
+                                                                    <Plus size={10} /> Add Price
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     ))}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => addClass(tIndex)}
-                                                        className="text-xs text-blue-600 font-medium hover:text-blue-700 flex items-center gap-1 mt-1"
-                                                    >
-                                                        <Plus size={12} /> Add Class
-                                                    </button>
                                                 </div>
                                             </div>
                                         ))}

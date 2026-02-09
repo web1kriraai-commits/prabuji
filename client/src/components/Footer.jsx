@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
 import footerRotatingImg from '../assets/image/photo-1606041008023-472dfb5e530f__1_-removebg-preview.png';
 
-import { 
-  FaFacebookF, 
-  FaInstagram, 
-  FaTwitter, 
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaTwitter,
   FaYoutube,
   FaHome,
   FaInfoCircle,
@@ -146,7 +146,7 @@ const Footer = () => {
             }}>
               Bringing the essence of Krishna Consciousness into your daily life through inspiring yatras, blissful kirtans, and transformative spiritual courses.
             </p>
-            
+
             {/* Social Media Links */}
             <div style={{
               display: 'flex',
@@ -227,7 +227,7 @@ const Footer = () => {
                     onMouseOver={(e) => e.target.style.color = '#bfdbf7'}
                     onMouseOut={(e) => e.target.style.color = 'rgba(255, 255, 255, 0.85)'}
                   >
-                    <span style={{ 
+                    <span style={{
                       fontSize: '0.9rem',
                       color: '#bfdbf7',
                       display: 'flex',
@@ -268,7 +268,7 @@ const Footer = () => {
                 alignItems: 'flex-start',
                 gap: '0.75rem'
               }}>
-                <span style={{ 
+                <span style={{
                   fontSize: '1rem',
                   color: '#bfdbf7',
                   display: 'flex',
@@ -291,7 +291,7 @@ const Footer = () => {
                 alignItems: 'flex-start',
                 gap: '0.75rem'
               }}>
-                <span style={{ 
+                <span style={{
                   fontSize: '1rem',
                   color: '#bfdbf7',
                   display: 'flex',
@@ -306,7 +306,7 @@ const Footer = () => {
                   color: 'rgba(255, 255, 255, 0.85)',
                   lineHeight: 1.6
                 }}>
-                  +91 7990200618
+                  +91 7600156255
                 </p>
               </div>
               <div style={{
@@ -314,7 +314,7 @@ const Footer = () => {
                 alignItems: 'flex-start',
                 gap: '0.75rem'
               }}>
-                <span style={{ 
+                <span style={{
                   fontSize: '1rem',
                   color: '#bfdbf7',
                   display: 'flex',
@@ -463,18 +463,18 @@ const Footer = () => {
           <p style={{ margin: 0 }}>
             Copyright © {new Date().getFullYear()} Gaurangas Group. All rights reserved.
           </p>
-          <p style={{ 
+          <p style={{
             margin: 0,
             fontSize: '0.85rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            Made with 
-            <FaHeart style={{ 
+            Made with
+            <FaHeart style={{
               color: '#ff6b6b',
               fontSize: '0.8rem'
-            }} /> 
+            }} />
             for Krishna Consciousness
           </p>
         </motion.div>

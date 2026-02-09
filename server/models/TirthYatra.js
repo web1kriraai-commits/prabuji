@@ -53,8 +53,16 @@ const tirthYatraSchema = new mongoose.Schema({
         from: String,
         to: String,
         classes: [{
-            category: { type: String, enum: ['AC', 'Non-AC', 'Sleeper', 'Seater', 'Other', '2AC', '3AC'] },
+            category: { type: String, enum: ['AC', 'Non-AC', 'Sleeper', 'Seater', 'Other', '2AC', '3AC', '1 AC', '2 AC', '3 AC', 'CC', 'EC', 'SL', '2S', 'General'] },
             price: Number
+        }],
+        routes: [{
+            from: String,
+            to: String,
+            classes: [{
+                category: { type: String, enum: ['AC', 'Non-AC', 'Sleeper', 'Seater', 'Other', '2AC', '3AC', '1 AC', '2 AC', '3 AC', 'CC', 'EC', 'SL', '2S', 'General'] },
+                price: Number
+            }]
         }]
     }],
     itinerary: [{

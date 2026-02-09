@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    FaTimes, FaCheckCircle, FaChevronLeft, FaChevronRight,
+    FaTimes, FaCheckCircle, FaChevronLeft, FaChevronRight, FaChevronDown,
     FaUser, FaUsers, FaIdCard, FaBed, FaTrain, FaCreditCard,
-    FaComment, FaUpload, FaTrash, FaPlus
+    FaComment, FaUpload, FaTrash, FaPlus, FaLongArrowAltRight
 } from 'react-icons/fa';
 import api from '../lib/api';
 
@@ -13,8 +13,9 @@ const STEPS = [
     { id: 3, title: 'Documents', icon: <FaIdCard /> },
     { id: 4, title: 'Accommodation', icon: <FaBed /> },
     { id: 5, title: 'Train', icon: <FaTrain /> },
-    { id: 6, title: 'Payment', icon: <FaCreditCard /> },
-    { id: 7, title: 'Complete', icon: <FaComment /> }
+    { id: 6, title: 'Packages', icon: <FaBed /> },
+    { id: 7, title: 'Payment', icon: <FaCreditCard /> },
+    { id: 8, title: 'Complete', icon: <FaComment /> }
 ];
 
 const MultiStepRegistrationForm = ({ yatra, onClose }) => {
@@ -22,6 +23,14 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
     const [submitting, setSubmitting] = useState(false);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [submitError, setSubmitError] = useState('');
+    const isInitialLoad = useRef(true);
+
+    // Handle closing the form (clears saved data)
+    const handleClose = () => {
+        // Clear localStorage when user manually closes the form
+        localStorage.removeItem(`yatra_registration_${yatra._id}`);
+        onClose();
+    };
 
     // Form Data
     const [primaryContact, setPrimaryContact] = useState({
@@ -40,13 +49,117 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
     const [accommodation, setAccommodation] = useState({
         sameRoom: true,
+        wantTrain: true,
         notes: ''
     });
 
     const [selectedTrain, setSelectedTrain] = useState(null); // { ...train, selectedClass: { category, price } }
     const [selectedPackage, setSelectedPackage] = useState(null); // { ...pkg, selectedPricing: { type, perPerson, cost } }
     const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+    const [openDropdown, setOpenDropdown] = useState(null); // 'boarding' or 'alighting'
+
     const [suggestions, setSuggestions] = useState('');
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        const storageKey = `yatra_registration_${yatra._id}`;
+        const savedData = localStorage.getItem(storageKey);
+
+        console.log('Loading from localStorage:', storageKey);
+        console.log('Saved data:', savedData);
+
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                console.log('Parsed data:', parsed);
+
+                // Mark initial load as complete BEFORE updating state
+                // This prevents the save effect from running during restoration
+                isInitialLoad.current = false;
+
+                // Restore all fields - check for undefined instead of truthiness to allow falsy values
+                if (parsed.currentStep !== undefined) {
+                    console.log('Restoring currentStep:', parsed.currentStep);
+                    setCurrentStep(parsed.currentStep);
+                }
+                if (parsed.primaryContact !== undefined) {
+                    console.log('Restoring primaryContact:', parsed.primaryContact);
+                    setPrimaryContact(parsed.primaryContact);
+                }
+                if (parsed.members !== undefined && Array.isArray(parsed.members)) {
+                    console.log('Restoring members:', parsed.members);
+                    // Members need special handling because aadhaarFile is not serializable
+                    const restoredMembers = parsed.members.map(m => ({
+                        ...m,
+                        aadhaarFile: null // Files cannot be restored
+                    }));
+                    setMembers(restoredMembers);
+                }
+                if (parsed.accommodation !== undefined) {
+                    console.log('Restoring accommodation:', parsed.accommodation);
+                    setAccommodation(parsed.accommodation);
+                }
+                if (parsed.selectedTrain !== undefined) {
+                    console.log('Restoring selectedTrain:', parsed.selectedTrain);
+                    setSelectedTrain(parsed.selectedTrain);
+                }
+                if (parsed.selectedPackage !== undefined) {
+                    console.log('Restoring selectedPackage:', parsed.selectedPackage);
+                    setSelectedPackage(parsed.selectedPackage);
+                }
+                if (parsed.suggestions !== undefined) {
+                    console.log('Restoring suggestions:', parsed.suggestions);
+                    setSuggestions(parsed.suggestions);
+                }
+
+                console.log('Data restoration complete');
+            } catch (e) {
+                console.error("Failed to load saved registration data", e);
+                isInitialLoad.current = false;
+            }
+        } else {
+            console.log('No saved data found');
+            isInitialLoad.current = false;
+        }
+    }, [yatra._id]);
+
+    // Save to localStorage on change (but not during initial load)
+    useEffect(() => {
+        // Skip saving during the initial load to prevent overwriting restored data
+        if (isInitialLoad.current) {
+            return;
+        }
+
+        // Don't save if data is in initial/empty state (prevents overwriting during React Strict Mode double-mount)
+        const isEmptyState = (
+            currentStep === 1 &&
+            primaryContact.email === '' &&
+            primaryContact.phone === '' &&
+            members.length === 1 &&
+            members[0].name === '' &&
+            members[0].age === '' &&
+            members[0].mobileNumber === '' &&
+            members[0].city === ''
+        );
+
+        // Only save if we have actual data to preserve
+        if (isEmptyState) {
+            console.log('Skipping save - data is in initial empty state');
+            return;
+        }
+
+        const dataToSave = {
+            currentStep,
+            primaryContact,
+            members: members.map(m => ({ ...m, aadhaarFile: null })), // Don't try to save files
+            accommodation,
+            selectedTrain,
+            selectedPackage,
+            suggestions
+        };
+        console.log('Saving to localStorage:', dataToSave);
+        localStorage.setItem(`yatra_registration_${yatra._id}`, JSON.stringify(dataToSave));
+    }, [currentStep, primaryContact, members, accommodation, selectedTrain, selectedPackage, suggestions, yatra._id]);
 
     // Parse train info from yatra
     const trainInfo = (() => {
@@ -131,8 +244,10 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             case 5:
                 return true; // Train optional
             case 6:
-                return true; // Payment screenshot optional for now
+                return true; // Packages optional
             case 7:
+                return true; // Payment screenshot optional for now
+            case 8:
                 return true;
             default:
                 return true;
@@ -141,13 +256,23 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
     const nextStep = () => {
         if (validateStep() && currentStep < STEPS.length) {
-            setCurrentStep(currentStep + 1);
+            // Logic to skip Train step if user doesn't want train
+            if (currentStep === 4 && !accommodation.wantTrain) {
+                setCurrentStep(6); // Skip step 5 (Train) and go to 6 (Packages)
+            } else {
+                setCurrentStep(currentStep + 1);
+            }
         }
     };
 
     const prevStep = () => {
         if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
+            // Logic to skip Train step when going back from Packages
+            if (currentStep === 6 && !accommodation.wantTrain) {
+                setCurrentStep(4); // Skip step 5 (Train) and go back to 4 (Accommodation)
+            } else {
+                setCurrentStep(currentStep - 1);
+            }
         }
     };
 
@@ -178,7 +303,9 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                     trainName: selectedTrain.trainName,
                     trainNumber: selectedTrain.trainNumber,
                     classCategory: selectedTrain.selectedClass?.category,
-                    price: selectedTrain.selectedClass?.price
+                    price: selectedTrain.selectedClass?.price,
+                    boardingStation: selectedTrain.boardingStation || '',
+                    alightingStation: selectedTrain.alightingStation || ''
                 };
                 formData.append('selectedTrain', JSON.stringify(trainToSave));
             }
@@ -215,6 +342,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             });
 
             setSubmitSuccess(true);
+            localStorage.removeItem(`yatra_registration_${yatra._id}`);
         } catch (error) {
             console.error('Registration error:', error);
             setSubmitError(error.response?.data?.msg || 'Failed to submit registration. Please try again.');
@@ -284,7 +412,13 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                     <input
                                         type="tel"
                                         value={primaryContact.phone}
-                                        onChange={(e) => setPrimaryContact({ ...primaryContact, phone: e.target.value })}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (val.length <= 10) {
+                                                setPrimaryContact({ ...primaryContact, phone: val });
+                                            }
+                                        }}
+                                        maxLength={10}
                                         placeholder="9876543210"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none"
                                         required
@@ -371,7 +505,13 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                                 <input
                                                     type="tel"
                                                     value={member.mobileNumber}
-                                                    onChange={(e) => updateMember(index, 'mobileNumber', e.target.value)}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (val.length <= 10) {
+                                                            updateMember(index, 'mobileNumber', val);
+                                                        }
+                                                    }}
+                                                    maxLength={10}
                                                     placeholder="9876543210"
                                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none"
                                                 />
@@ -479,6 +619,39 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                         />
                                         <span className="font-medium text-gray-800">No (it's OK)</span>
                                     </label>
+                                    <div className="bg-white border border-gray-200 rounded-xl p-4">
+                                        <label className="font-medium text-gray-800 block mb-3">
+                                            Would you like us to book train tickets for you?
+                                        </label>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50">
+                                                <input
+                                                    type="radio"
+                                                    name="wantTrain"
+                                                    checked={accommodation.wantTrain === true}
+                                                    onChange={() => {
+                                                        setAccommodation({ ...accommodation, wantTrain: true });
+                                                        // Reset selected train if they switch back and forth? Maybe not needed, just hide it.
+                                                    }}
+                                                    className="w-4 h-4 text-teal-600"
+                                                />
+                                                <span className="font-medium text-gray-800">Yes, please</span>
+                                            </label>
+                                            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50">
+                                                <input
+                                                    type="radio"
+                                                    name="wantTrain"
+                                                    checked={accommodation.wantTrain === false}
+                                                    onChange={() => {
+                                                        setAccommodation({ ...accommodation, wantTrain: false });
+                                                        setSelectedTrain(null); // Clear selection if they say no
+                                                    }}
+                                                    className="w-4 h-4 text-teal-600"
+                                                />
+                                                <span className="font-medium text-gray-800">No, I'll book my own</span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -498,57 +671,235 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                     </div>
                 );
 
-            case 5: // Train Selection & Packages
+            case 5: // Train Selection
+                const getPriceDisplay = (train, category) => {
+                    // 1. If Boarding & Alighting are selected, show specific route price
+                    if (selectedTrain?.trainName === train.trainName && selectedTrain?.boardingStation && selectedTrain?.alightingStation && selectedTrain?.routes) {
+                        const route = selectedTrain.routes.find(r =>
+                            r.from === selectedTrain.boardingStation &&
+                            r.to === selectedTrain.alightingStation
+                        );
+                        if (route) {
+                            const routeClass = route.classes.find(c => c.category === category);
+                            if (routeClass) {
+                                return `₹${routeClass.price}`;
+                            }
+                        }
+                    }
+
+                    // 2. If routes exist, show range or "Starts from"
+                    if (train.routes && train.routes.length > 0) {
+                        const prices = [];
+                        train.routes.forEach(route => {
+                            const routeClass = route.classes.find(c => c.category === category);
+                            if (routeClass) prices.push(routeClass.price);
+                        });
+
+                        if (prices.length > 0) {
+                            const minPrice = Math.min(...prices);
+                            const maxPrice = Math.max(...prices);
+                            if (minPrice !== maxPrice) {
+                                return `₹${minPrice} - ₹${maxPrice}`;
+                            }
+                            return `₹${minPrice}`;
+                        }
+                    }
+
+                    // 3. Fallback to base price
+                    return 'N/A';
+                };
+
                 return (
                     <div className="space-y-6">
-                        {/* Train Selection */}
-                        <div className="space-y-4">
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                                <h4 className="font-semibold text-blue-800 mb-2">Train Selection</h4>
-                                <p className="text-sm text-blue-700">
-                                    Select your preferred train and class. Prices are per person.
-                                </p>
-                            </div>
-
-                            {trainInfo.length > 0 ? (
-                                <div className="space-y-4">
-                                    {trainInfo.map((train, index) => (
-                                        <div key={index} className="border-2 border-gray-100 rounded-xl p-4">
-                                            <div className="font-bold text-gray-800 text-lg mb-2">
-                                                {train.trainName} <span className="text-sm font-normal text-gray-500">({train.trainNumber})</span>
+                        {/* Train Selection - Only shown if Step 5 is active (implied by case 5) */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 text-lg mb-4">Train Selection</h4>
+                            {trainInfo && trainInfo.length > 0 ? (
+                                <div className="space-y-6">
+                                    {trainInfo.map((train, tIndex) => (
+                                        <div key={tIndex} className="border-2 border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div>
+                                                    <h5 className="font-bold text-gray-900 text-xl">{train.trainName || `Train ${tIndex + 1}`}</h5>
+                                                    {train.trainNumber && (
+                                                        <p className="text-sm text-gray-500">Train #{train.trainNumber}</p>
+                                                    )}
+                                                </div>
                                             </div>
 
-                                            {/* Render Classes */}
-                                            {train.classes && train.classes.length > 0 ? (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                                                    {train.classes.map((cls, idx) => (
-                                                        <label
-                                                            key={idx}
-                                                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedTrain?.trainName === train.trainName && selectedTrain?.selectedClass?.category === cls.category
-                                                                    ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500'
-                                                                    : 'border-gray-200 hover:bg-gray-50'
-                                                                }`}
-                                                        >
-                                                            <div className="flex items-center gap-2">
-                                                                <input
-                                                                    type="radio"
-                                                                    name="train-class"
-                                                                    checked={selectedTrain?.trainName === train.trainName && selectedTrain?.selectedClass?.category === cls.category}
-                                                                    onChange={() => setSelectedTrain({
-                                                                        ...train,
-                                                                        selectedClass: cls
-                                                                    })}
-                                                                    className="w-4 h-4 text-teal-600"
-                                                                />
-                                                                <span className="font-medium text-gray-700">{cls.category}</span>
-                                                            </div>
-                                                            <span className="font-bold text-teal-700">₹{cls.price}</span>
-                                                        </label>
-                                                    ))}
+                                            {(train.from || train.to) && (
+                                                <div className="inline-flex items-center gap-2 text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg">
+                                                    <span className="font-medium text-gray-800">{train.from || 'Origin'}</span>
+                                                    <FaLongArrowAltRight className="text-gray-400" />
+                                                    <span className="font-medium text-gray-800">{train.to || 'Destination'}</span>
                                                 </div>
-                                            ) : (
-                                                <p className="text-sm text-gray-500 italic">No class details available.</p>
                                             )}
+
+                                            {/* Select Train Button */}
+                                            <label className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${selectedTrain?.trainName === train.trainName ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500' : 'border-gray-200 hover:bg-gray-50'}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="train-selection"
+                                                    checked={selectedTrain?.trainName === train.trainName}
+                                                    onChange={() => {
+                                                        setSelectedTrain({
+                                                            ...train,
+                                                            selectedClass: null,
+                                                            boardingStation: '',
+                                                            alightingStation: ''
+                                                        });
+                                                    }}
+                                                    className="w-5 h-5 text-teal-600 mr-3"
+                                                />
+                                                <span className="font-semibold text-gray-800">Select this Train</span>
+                                            </label>
+
+                                            {/* Route & Class Selection - Show only if this train is selected */}
+                                            {selectedTrain?.trainName === train.trainName && (
+                                                <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+
+                                                    {/* Station Selection */}
+                                                    <div>
+                                                        <h5 className="font-semibold text-gray-800 mb-2 text-sm flex items-center gap-2">
+                                                            <FaTrain className="text-teal-600" /> Select Route
+                                                        </h5>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-500 mb-1">From</label>
+                                                                <div className="relative">
+                                                                    <button
+                                                                        onClick={() => setOpenDropdown(openDropdown === 'boarding' ? null : 'boarding')}
+                                                                        className="w-full pl-4 pr-10 py-3 border-2 border-gray-100 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:border-teal-500 bg-gray-50/50 hover:bg-white transition-all text-left flex items-center justify-between"
+                                                                    >
+                                                                        <span className={!selectedTrain.boardingStation ? 'text-gray-800' : 'text-gray-900'}>
+                                                                            {selectedTrain.boardingStation || 'Select Boarding Station'}
+                                                                        </span>
+                                                                        <FaChevronDown size={14} className={`text-teal-600 transition-transform ${openDropdown === 'boarding' ? 'rotate-180' : ''}`} />
+                                                                    </button>
+
+                                                                    <AnimatePresence>
+                                                                        {openDropdown === 'boarding' && (
+                                                                            <motion.div
+                                                                                initial={{ opacity: 0, y: -10 }}
+                                                                                animate={{ opacity: 1, y: 0 }}
+                                                                                exit={{ opacity: 0, y: -10 }}
+                                                                                className="absolute z-10 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto"
+                                                                            >
+                                                                                {[...new Set((train.routes || []).map(r => r.from))].map((station, idx) => (
+                                                                                    <div
+                                                                                        key={idx}
+                                                                                        onClick={() => {
+                                                                                            setSelectedTrain({
+                                                                                                ...selectedTrain,
+                                                                                                boardingStation: station,
+                                                                                                alightingStation: '',
+                                                                                                selectedClass: null
+                                                                                            });
+                                                                                            setOpenDropdown(null);
+                                                                                        }}
+                                                                                        className="px-4 py-3 hover:bg-teal-50 text-sm text-gray-900 font-medium cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+                                                                                    >
+                                                                                        {station}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </motion.div>
+                                                                        )}
+                                                                    </AnimatePresence>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
+                                                                <div className="relative">
+                                                                    <button
+                                                                        onClick={() => !(!selectedTrain.boardingStation) && setOpenDropdown(openDropdown === 'alighting' ? null : 'alighting')}
+                                                                        disabled={!selectedTrain.boardingStation}
+                                                                        className={`w-full pl-4 pr-10 py-3 border-2 border-gray-100 rounded-xl text-sm font-medium text-gray-700 focus:outline-none focus:border-teal-500 bg-gray-50/50 hover:bg-white transition-all text-left flex items-center justify-between ${!selectedTrain.boardingStation ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
+                                                                    >
+                                                                        <span className={!selectedTrain.alightingStation ? 'text-gray-800' : 'text-gray-900'}>
+                                                                            {selectedTrain.alightingStation || 'Select Alighting Station'}
+                                                                        </span>
+                                                                        <FaChevronDown size={14} className={`text-teal-600 transition-transform ${openDropdown === 'alighting' ? 'rotate-180' : ''}`} />
+                                                                    </button>
+
+                                                                    <AnimatePresence>
+                                                                        {openDropdown === 'alighting' && (
+                                                                            <motion.div
+                                                                                initial={{ opacity: 0, y: -10 }}
+                                                                                animate={{ opacity: 1, y: 0 }}
+                                                                                exit={{ opacity: 0, y: -10 }}
+                                                                                className="absolute z-10 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-y-auto"
+                                                                            >
+                                                                                {(train.routes || [])
+                                                                                    .filter(r => r.from === selectedTrain.boardingStation)
+                                                                                    .map((r, idx) => (
+                                                                                        <div
+                                                                                            key={idx}
+                                                                                            onClick={() => {
+                                                                                                setSelectedTrain({
+                                                                                                    ...selectedTrain,
+                                                                                                    alightingStation: r.to,
+                                                                                                    selectedClass: null
+                                                                                                });
+                                                                                                setOpenDropdown(null);
+                                                                                            }}
+                                                                                            className="px-4 py-3 hover:bg-teal-50 text-sm text-gray-900 font-medium cursor-pointer transition-colors border-b border-gray-50 last:border-0"
+                                                                                        >
+                                                                                            {r.to}
+                                                                                        </div>
+                                                                                    ))}
+                                                                            </motion.div>
+                                                                        )}
+                                                                    </AnimatePresence>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Class Selection - Show only after route is valid */}
+                                                    {selectedTrain.boardingStation && selectedTrain.alightingStation && (() => {
+                                                        const route = (train.routes || []).find(r =>
+                                                            r.from === selectedTrain.boardingStation &&
+                                                            r.to === selectedTrain.alightingStation
+                                                        );
+
+                                                        if (!route) return <p className="text-sm text-red-500">Route not available.</p>;
+
+                                                        return (
+                                                            <div>
+                                                                <h5 className="font-semibold text-gray-800 mb-2 text-sm">Select Class</h5>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                    {route.classes.map((cls, idx) => (
+                                                                        <label
+                                                                            key={idx}
+                                                                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedTrain.selectedClass?.category === cls.category
+                                                                                ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500'
+                                                                                : 'border-gray-200 hover:bg-gray-50'
+                                                                                }`}
+                                                                        >
+                                                                            <div className="flex items-center gap-2">
+                                                                                <input
+                                                                                    type="radio"
+                                                                                    name="train-class-route"
+                                                                                    checked={selectedTrain.selectedClass?.category === cls.category}
+                                                                                    onChange={() => setSelectedTrain({
+                                                                                        ...selectedTrain,
+                                                                                        selectedClass: cls
+                                                                                    })}
+                                                                                    className="w-4 h-4 text-teal-600"
+                                                                                />
+                                                                                <span className="font-medium text-gray-700">{cls.category}</span>
+                                                                            </div>
+                                                                            <span className="font-bold text-teal-700">₹{cls.price}</span>
+                                                                        </label>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
+
+                                                </div>
+                                            )}
+
                                         </div>
                                     ))}
                                 </div>
@@ -559,10 +910,14 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                 </div>
                             )}
                         </div>
+                    </div>
+                );
 
-                        {/* Package Selection */}
+            case 6: // Packages Selection
+                return (
+                    <div className="space-y-6">
                         {packages.length > 0 && (
-                            <div className="space-y-4 pt-4 border-t border-gray-100">
+                            <div className="space-y-4">
                                 <h4 className="font-semibold text-gray-800 text-lg">Select Package</h4>
                                 <div className="space-y-4">
                                     {packages.map((pkg, index) => (
@@ -577,8 +932,8 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                                         <label
                                                             key={idx}
                                                             className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedPackage?.packageName === pkg.name && selectedPackage?.selectedPricing?.type === price.type
-                                                                    ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500'
-                                                                    : 'border-gray-200 hover:bg-gray-50'
+                                                                ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500'
+                                                                : 'border-gray-200 hover:bg-gray-50'
                                                                 }`}
                                                         >
                                                             <div className="flex items-center gap-2">
@@ -613,7 +968,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                     </div>
                 );
 
-            case 6: // Payment
+            case 7: // Payment
                 return (
                     <div className="space-y-6">
                         {/* Summary Card */}
@@ -693,7 +1048,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                     </div>
                 );
 
-            case 7: // Suggestions & Complete
+            case 8: // Suggestions & Complete
                 return (
                     <div className="space-y-6">
                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
@@ -782,13 +1137,13 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={onClose}
+            onClick={handleClose}
         >
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+                className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -798,7 +1153,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                             <h3 className="text-xl font-bold">Register for Yatra</h3>
                             <p className="text-teal-100 text-sm">{yatra.title}</p>
                         </div>
-                        <button onClick={onClose} className="text-white/80 hover:text-white">
+                        <button onClick={handleClose} className="text-white/80 hover:text-white">
                             <FaTimes size={24} />
                         </button>
                     </div>
