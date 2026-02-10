@@ -55,12 +55,26 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
     const [selectedTrain, setSelectedTrain] = useState(null); // { ...train, selectedClass: { category, price } }
     const [selectedPackage, setSelectedPackage] = useState(null); // { ...pkg, selectedPricing: { type, perPerson, cost } }
+    const [selectedCustomPackages, setSelectedCustomPackages] = useState([]); // [{ name, price }]
     const [paymentScreenshot, setPaymentScreenshot] = useState(null);
     const [openDropdown, setOpenDropdown] = useState(null); // 'boarding' or 'alighting'
 
     const [suggestions, setSuggestions] = useState('');
+    const [validationError, setValidationError] = useState('');
 
-    // Load from localStorage on mount
+    // Validation Helpers
+    const isValidEmail = (email) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    };
+
+    const isValidPhone = (phone) => {
+        return /^\d{10}$/.test(phone);
+    };
+
+    const isValidAge = (age) => {
+        const num = parseInt(age);
+        return !isNaN(num) && num > 0 && num <= 120;
+    };
     useEffect(() => {
         const storageKey = `yatra_registration_${yatra._id}`;
         const savedData = localStorage.getItem(storageKey);
@@ -106,6 +120,10 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                 if (parsed.selectedPackage !== undefined) {
                     console.log('Restoring selectedPackage:', parsed.selectedPackage);
                     setSelectedPackage(parsed.selectedPackage);
+                }
+                if (parsed.selectedCustomPackages !== undefined) {
+                    console.log('Restoring selectedCustomPackages:', parsed.selectedCustomPackages);
+                    setSelectedCustomPackages(parsed.selectedCustomPackages);
                 }
                 if (parsed.suggestions !== undefined) {
                     console.log('Restoring suggestions:', parsed.suggestions);
@@ -155,6 +173,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             accommodation,
             selectedTrain,
             selectedPackage,
+            selectedCustomPackages,
             suggestions
         };
         console.log('Saving to localStorage:', dataToSave);
@@ -197,6 +216,13 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             total += price * memberCount;
         }
 
+        // Add Custom Packages Cost
+        if (selectedCustomPackages && selectedCustomPackages.length > 0) {
+            selectedCustomPackages.forEach(pkg => {
+                total += (parseFloat(pkg.price) || 0) * memberCount;
+            });
+        }
+
         return total;
     };
 
@@ -230,15 +256,55 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
     // Validation
     const validateStep = () => {
+        setValidationError(''); // Clear previous errors
+
         switch (currentStep) {
             case 1:
                 return true; // Info step - just display
             case 2:
-                // Validate members
-                return members.every(m => m.name && m.age && m.gender) &&
-                    primaryContact.email && primaryContact.phone;
+                // Validate Primary Contact
+                if (!isValidEmail(primaryContact.email)) {
+                    setValidationError('Please enter a valid email address.');
+                    return false;
+                }
+                if (!isValidPhone(primaryContact.phone)) {
+                    setValidationError('Please enter a valid 10-digit phone number.');
+                    return false;
+                }
+
+                // Validate Members
+                for (let i = 0; i < members.length; i++) {
+                    const m = members[i];
+                    if (!m.name.trim()) {
+                        setValidationError(`Please enter a name for Member ${i + 1}.`);
+                        return false;
+                    }
+                    if (!isValidAge(m.age)) {
+                        setValidationError(`Please enter a valid age (1-120) for Member ${i + 1}.`);
+                        return false;
+                    }
+                    if (!m.gender) {
+                        setValidationError(`Please select a gender for Member ${i + 1}.`);
+                        return false;
+                    }
+                    // Optional mobile validation for members
+                    if (m.mobileNumber && !isValidPhone(m.mobileNumber)) {
+                        setValidationError(`Please enter a valid 10-digit mobile number for Member ${i + 1}.`);
+                        return false;
+                    }
+                }
+                return true;
+
             case 3:
-                return true; // Documents optional
+                // Documents (Aadhaar) - MANDATORY for all
+                for (let i = 0; i < members.length; i++) {
+                    if (!members[i].aadhaarFile) {
+                        setValidationError(`Please upload Aadhaar card for ${members[i].name || `Member ${i + 1}`}.`);
+                        return false;
+                    }
+                }
+                return true;
+
             case 4:
                 return true; // Accommodation has default
             case 5:
@@ -246,7 +312,12 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             case 6:
                 return true; // Packages optional
             case 7:
-                return true; // Payment screenshot optional for now
+                // Payment - MANDATORY screenshot
+                if (!paymentScreenshot) {
+                    setValidationError('Please upload the payment screenshot to proceed.');
+                    return false;
+                }
+                return true;
             case 8:
                 return true;
             default:
@@ -322,7 +393,22 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                 formData.append('selectedPackage', JSON.stringify(pkgToSave));
             }
 
+            if (selectedCustomPackages && selectedCustomPackages.length > 0) {
+                formData.append('selectedCustomPackages', JSON.stringify(selectedCustomPackages));
+            }
+
             formData.append('totalAmount', calculateTotal());
+            // Add advance payment info if applicable
+            const percentage = parseFloat(yatra.advancePaymentPercentage);
+            if (!isNaN(percentage) && percentage > 0 && percentage < 100) {
+                const total = calculateTotal();
+                const advanceAmount = Math.round((total * percentage) / 100);
+                formData.append('advancedPaymentAmount', advanceAmount);
+                formData.append('isAdvancePayment', 'true');
+            } else {
+                formData.append('isAdvancePayment', 'false');
+            }
+
             formData.append('suggestions', suggestions);
 
             // Upload files
@@ -360,7 +446,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             case 1: // Yatra Info
                 return (
                     <div className="space-y-6">
-                        <div className="relative h-48 rounded-2xl overflow-hidden">
+                        <div className="relative h-64 rounded-2xl overflow-hidden">
                             <img
                                 src={yatra.image}
                                 alt={yatra.title}
@@ -899,7 +985,6 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
                                                 </div>
                                             )}
-
                                         </div>
                                     ))}
                                 </div>
@@ -909,6 +994,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                     <p>Train details will be shared separately.</p>
                                 </div>
                             )}
+
                         </div>
                     </div>
                 );
@@ -965,6 +1051,57 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                 </div>
                             </div>
                         )}
+
+                        {/* Custom Packages (Add-ons) Selection */}
+                        {yatra.customPackages && yatra.customPackages.length > 0 && (
+                            <div className="space-y-4 pt-6 md:pt-8 border-t border-gray-100">
+                                <h4 className="font-semibold text-gray-800 text-lg flex items-center gap-2">
+                                    Optional Add-ons
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {yatra.customPackages.map((pkg, idx) => {
+                                        const isSelected = selectedCustomPackages.some(p => p.name === pkg.name);
+                                        return (
+                                            <label
+                                                key={idx}
+                                                className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${isSelected
+                                                    ? 'border-orange-500 bg-orange-50/50 shadow-sm'
+                                                    : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                <div className="flex-shrink-0 mt-1">
+                                                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-orange-500 border-orange-500' : 'border-gray-300 bg-white'
+                                                        }`}>
+                                                        {isSelected && <FaCheckCircle className="text-white text-xs" />}
+                                                    </div>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => {
+                                                            if (isSelected) {
+                                                                setSelectedCustomPackages(selectedCustomPackages.filter(p => p.name !== pkg.name));
+                                                            } else {
+                                                                setSelectedCustomPackages([...selectedCustomPackages, pkg]);
+                                                            }
+                                                        }}
+                                                        className="hidden"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <span className="font-bold text-gray-800 block">{pkg.name}</span>
+                                                    {pkg.description && (
+                                                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{pkg.description}</p>
+                                                    )}
+                                                    <div className="mt-2 text-sm font-semibold text-orange-700">
+                                                        ₹{pkg.price} <span className="text-xs font-normal text-gray-500">/ person</span>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
 
@@ -1006,11 +1143,59 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                 </div>
                             )}
 
+                            {/* Custom Packages Summary */}
+                            {selectedCustomPackages && selectedCustomPackages.length > 0 && (
+                                <div className="space-y-2 border-t border-dashed pt-2 mt-2">
+                                    {selectedCustomPackages.map((pkg, idx) => (
+                                        <div key={idx} className="flex justify-between items-start text-sm">
+                                            <div>
+                                                <p className="font-semibold text-gray-700">Add-on: {pkg.name}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-medium">₹{pkg.price} × {members.length}</p>
+                                                <p className="font-bold text-gray-800">₹{(parseFloat(pkg.price) * members.length).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {/* Total */}
-                            <div className="flex justify-between items-center border-t-2 border-gray-100 pt-3 mt-2">
-                                <span className="font-bold text-gray-800 text-lg">Total Amount</span>
-                                <span className="font-bold text-teal-600 text-2xl">₹{calculateTotal().toLocaleString()}</span>
+                            <div className="border-t-2 border-dashed border-gray-200 pt-3 mt-4">
+                                <div className="flex justify-between items-center text-lg">
+                                    <span className="font-bold text-gray-800">Total Yatra Cost</span>
+                                    <span className="font-bold text-teal-700">₹{calculateTotal().toLocaleString()}</span>
+                                </div>
+                                {(!isNaN(parseFloat(yatra.advancePaymentPercentage)) && parseFloat(yatra.advancePaymentPercentage) > 0 && parseFloat(yatra.advancePaymentPercentage) < 100) && (
+                                    <div className="mt-3 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                        <div className="flex justify-between items-center text-base mb-1">
+                                            <span className="font-semibold text-orange-800">Advance Payment Required ({yatra.advancePaymentPercentage}%)</span>
+                                            <span className="font-bold text-orange-700">
+                                                ₹{Math.round((calculateTotal() * yatra.advancePaymentPercentage) / 100).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-orange-600">
+                                            * Pay {yatra.advancePaymentPercentage}% of total amount (₹{calculateTotal().toLocaleString()}) to confirm booking
+                                        </p>
+                                    </div>
+                                )}
                             </div>
+                        </div>
+
+                        {/* Payment Instructions */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <h4 className="font-semibold text-blue-800 mb-2">Payment Instructions</h4>
+                            <p className="text-sm text-blue-700 mb-2">
+                                Please pay <span className="font-bold">
+                                    {(!isNaN(parseFloat(yatra.advancePaymentPercentage)) && parseFloat(yatra.advancePaymentPercentage) > 0 && parseFloat(yatra.advancePaymentPercentage) < 100)
+                                        ? `₹${Math.round((calculateTotal() * yatra.advancePaymentPercentage) / 100).toLocaleString()} (Advance Amount)`
+                                        : `₹${calculateTotal().toLocaleString()} (Total Amount)`
+                                    }
+                                </span> using the QR code below or bank details.
+                            </p>
+                            <p className="text-xs text-blue-600">
+                                Upload the screenshot of your payment to proceed.
+                            </p>
                         </div>
 
                         {/* QR Code */}
@@ -1196,38 +1381,44 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                 </div>
 
                 {/* Footer Navigation */}
-                <div className="p-4 border-t border-gray-200 flex justify-between items-center flex-shrink-0">
-                    <button
-                        onClick={prevStep}
-                        disabled={currentStep === 1}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${currentStep === 1
-                            ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-gray-700 hover:bg-gray-100'
-                            }`}
-                    >
-                        <FaChevronLeft /> Previous
-                    </button>
+                <div className="p-4 border-t border-gray-200 flex flex-col gap-3 flex-shrink-0">
+                    {/* Validation Error Message */}
+                    {validationError && (
+                        <div className="w-full p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center justify-center gap-2 animate-pulse text-sm font-medium">
+                            <FaTimes />
+                            {validationError}
+                        </div>
+                    )}
 
-                    {currentStep === STEPS.length ? (
+                    <div className="flex justify-between items-center w-full">
                         <button
-                            onClick={handleSubmit}
-                            disabled={submitting}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50"
-                        >
-                            {submitting ? 'Submitting...' : 'Submit Registration'}
-                        </button>
-                    ) : (
-                        <button
-                            onClick={nextStep}
-                            disabled={!validateStep()}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${validateStep()
-                                ? 'bg-teal-600 text-white hover:bg-teal-700'
-                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            onClick={prevStep}
+                            disabled={currentStep === 1}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${currentStep === 1
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-gray-700 hover:bg-gray-100'
                                 }`}
                         >
-                            Next <FaChevronRight />
+                            <FaChevronLeft /> Previous
                         </button>
-                    )}
+
+                        {currentStep === STEPS.length ? (
+                            <button
+                                onClick={handleSubmit}
+                                disabled={submitting}
+                                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-50"
+                            >
+                                {submitting ? 'Submitting...' : 'Submit Registration'}
+                            </button>
+                        ) : (
+                            <button
+                                onClick={nextStep}
+                                className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all bg-teal-600 text-white hover:bg-teal-700"
+                            >
+                                Next <FaChevronRight />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </motion.div>
         </motion.div>

@@ -16,7 +16,9 @@ exports.createRegistration = async (req, res) => {
             selectedTrain,
             selectedPackage,
             totalAmount,
-            suggestions
+            suggestions,
+            isAdvancePayment,
+            advancedPaymentAmount
         } = req.body;
 
         // Validate required fields
@@ -54,6 +56,21 @@ exports.createRegistration = async (req, res) => {
             }
         }
 
+        // Parse selectedCustomPackages if it's a string
+        let parsedCustomPackages = []; // Default to empty array
+        if (typeof req.body.selectedCustomPackages === 'string') {
+            try {
+                parsedCustomPackages = JSON.parse(req.body.selectedCustomPackages);
+            } catch (e) {
+                parsedCustomPackages = [];
+            }
+        } else if (Array.isArray(req.body.selectedCustomPackages)) {
+            parsedCustomPackages = req.body.selectedCustomPackages;
+        }
+
+        console.log('DEBUG: Incoming selectedCustomPackages:', req.body.selectedCustomPackages);
+        console.log('DEBUG: Parsed parsedCustomPackages:', parsedCustomPackages);
+
         // Handle file uploads - payment screenshot
         let paymentScreenshotUrl = null;
         if (req.files && req.files.paymentScreenshot) {
@@ -79,9 +96,12 @@ exports.createRegistration = async (req, res) => {
             accommodationNotes,
             selectedTrain: parsedTrain,
             selectedPackage: parsedPackage,
+            selectedCustomPackages: parsedCustomPackages,
             paymentScreenshot: paymentScreenshotUrl,
             paymentStatus: paymentScreenshotUrl ? 'uploaded' : 'pending',
             totalAmount: parseFloat(totalAmount) || 0,
+            paymentAmount: (isAdvancePayment === 'true' || isAdvancePayment === true) ? (parseFloat(advancedPaymentAmount) || 0) : (parseFloat(totalAmount) || 0),
+            paymentType: (isAdvancePayment === 'true' || isAdvancePayment === true) ? 'advance' : 'full',
             suggestions
         });
 

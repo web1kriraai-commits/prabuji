@@ -76,6 +76,11 @@ const yatraRegistrationSchema = new mongoose.Schema({
         pricePerPerson: Number,
         totalCost: Number
     },
+    // Custom/Add-on selection
+    selectedCustomPackages: [{
+        name: String,
+        price: Number
+    }],
     // Payment details
     paymentScreenshot: {
         type: String // Cloudinary URL
@@ -88,6 +93,15 @@ const yatraRegistrationSchema = new mongoose.Schema({
     totalAmount: {
         type: Number,
         default: 0
+    },
+    paymentAmount: {
+        type: Number,
+        default: 0
+    },
+    paymentType: {
+        type: String,
+        enum: ['full', 'advance'],
+        default: 'full'
     },
     // Suggestions/Feedback
     suggestions: {

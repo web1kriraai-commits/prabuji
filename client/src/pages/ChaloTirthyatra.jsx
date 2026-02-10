@@ -210,6 +210,12 @@ const YatraCard = ({ yatra, index }) => {
                     )}
                 </div>
                 <div className="w-full md:w-auto flex flex-col md:flex-row gap-4 justify-center">
+                    <button
+                        onClick={() => setShowRegisterModal(true)}
+                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                    >
+                        <FaUserPlus size={20} /> Register Now
+                    </button>
                     <WhatsAppButton link={yatra.whatsappLink} />
                     <button
                         onClick={() => setShowContactModal(true)}
@@ -461,7 +467,7 @@ const GuidelinesSection = ({ instructions }) => (
 
 const WhatsAppButton = ({ link }) => (
     <a
-        href={link || "https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0"}
+        href={link || "https://api.whatsapp.com/send/?phone=919924958709&text&type=phone_number&app_absent=0"}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 bg-[#25D366] text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl hover:bg-[#20bd5a] transition-all transform hover:-translate-y-1"

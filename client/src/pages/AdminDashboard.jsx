@@ -584,7 +584,7 @@ const AdminDashboard = () => {
                                                     </div>
                                                 </td>
                                                 <td className="py-4 px-6">
-                                                    <div className="text-sm">
+                                                    <div className="text-sm text-center">
                                                         <div className="font-bold text-gray-800">₹{(reg.totalAmount || 0).toLocaleString()}</div>
                                                         <span className={`inline-block px-2 py-0.5 text-xs rounded-full ${reg.paymentStatus === 'verified' ? 'bg-green-100 text-green-700' :
                                                             reg.paymentStatus === 'uploaded' ? 'bg-blue-100 text-blue-700' :
@@ -600,7 +600,7 @@ const AdminDashboard = () => {
                                                                 rel="noopener noreferrer"
                                                                 className="block text-xs text-teal-600 hover:underline mt-1"
                                                             >
-                                                                View Screenshot
+                                                                View Receipt
                                                             </a>
                                                         )}
                                                     </div>
@@ -1227,17 +1227,38 @@ const AdminDashboard = () => {
                                         Payment Details
                                     </h3>
                                     <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl border border-emerald-100">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <div>
-                                                <p className="text-sm text-emerald-800">Total Amount</p>
-                                                <p className="text-2xl font-bold text-emerald-900">₹{(selectedRegistration.totalAmount || 0).toLocaleString()}</p>
+                                        <div className="flex flex-col gap-3 mb-4">
+                                            <div className="flex justify-between items-center">
+                                                <p className="text-sm text-emerald-800">Total Yatra Cost</p>
+                                                <p className="text-xl font-bold text-emerald-900">₹{(selectedRegistration.totalAmount || 0).toLocaleString()}</p>
                                             </div>
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${selectedRegistration.paymentStatus === 'vertices' ? 'bg-green-200 text-green-800' :
-                                                selectedRegistration.paymentStatus === 'uploaded' ? 'bg-blue-200 text-blue-800' :
-                                                    'bg-yellow-200 text-yellow-800'
-                                                }`}>
-                                                {selectedRegistration.paymentStatus || 'Pending'}
-                                            </span>
+
+                                            <div className="flex justify-between items-center border-t border-emerald-200/50 pt-2">
+                                                <p className="text-sm text-emerald-800">
+                                                    Amount Paid
+                                                    <span className="text-xs ml-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full">
+                                                        {selectedRegistration.paymentType === 'advance' ? 'Advance' : 'Full'}
+                                                    </span>
+                                                </p>
+                                                <p className="text-lg font-semibold text-emerald-700">₹{(selectedRegistration.paymentAmount || 0).toLocaleString()}</p>
+                                            </div>
+
+                                            <div className="flex justify-between items-center border-t border-emerald-200 pt-2">
+                                                <p className="text-sm font-bold text-gray-700">Balance Due</p>
+                                                <p className={`text-xl font-bold ${(selectedRegistration.totalAmount - (selectedRegistration.paymentAmount || 0)) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                    ₹{Math.max(0, (selectedRegistration.totalAmount - (selectedRegistration.paymentAmount || 0))).toLocaleString()}
+                                                </p>
+                                            </div>
+
+                                            <div className="flex justify-end mt-2">
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${selectedRegistration.paymentStatus === 'verified' ? 'bg-green-200 text-green-800' :
+                                                    selectedRegistration.paymentStatus === 'uploaded' ? 'bg-blue-200 text-blue-800' :
+                                                        selectedRegistration.paymentStatus === 'failed' ? 'bg-red-200 text-red-800' :
+                                                            'bg-yellow-200 text-yellow-800'
+                                                    }`}>
+                                                    Status: {selectedRegistration.paymentStatus || 'Pending'}
+                                                </span>
+                                            </div>
                                         </div>
                                         {selectedRegistration.paymentScreenshot && (
                                             <div>
@@ -1330,6 +1351,29 @@ const AdminDashboard = () => {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Custom Packages (Add-ons) */}
+                                {selectedRegistration.selectedCustomPackages && selectedRegistration.selectedCustomPackages.length > 0 && (
+                                    <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                                        <h3 className="font-semibold text-orange-900 mb-3 flex items-center gap-2">
+                                            <Target className="w-4 h-4" />
+                                            Selected Add-ons (Custom Packages)
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {selectedRegistration.selectedCustomPackages.map((pkg, idx) => (
+                                                <div key={idx} className="bg-white p-3 rounded-lg border border-orange-200 flex justify-between items-center shadow-sm">
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800">{pkg.name}</p>
+                                                        {pkg.description && <p className="text-xs text-gray-500">{pkg.description}</p>}
+                                                    </div>
+                                                    <div className="text-orange-700 font-bold">
+                                                        ₹{pkg.price}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Travel & Package */}
                                 {(selectedRegistration.selectedTrain || selectedRegistration.selectedPackage) && (
