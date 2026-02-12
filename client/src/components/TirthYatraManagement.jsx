@@ -46,10 +46,11 @@ const TirthYatraManagement = () => {
         trainInfo: [], // [{ trainName: '', trainNumber: '', classes: [{ category: 'AC', price: 0 }], routes: [] }]
         itinerary: [], // [{ day: 1, date: '', schedule: [], meals: {} }]
         packages: [], // [{ name: '', description: '', pricing: [] }]
-        customPackages: [], // [{ name: '', description: '', price: '' }]
         instructions: [], // ['String']
         includes: [], // ['String']
-        excludes: [] // ['String']
+        excludes: [], // ['String']
+        basicCharge: 0,
+        advancePaymentAmount: 4000
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -314,28 +315,6 @@ const TirthYatraManagement = () => {
         setFormData({ ...formData, packages: newPackages });
     };
 
-    // Custom Packages (Add-ons) Management
-    const addCustomPackage = () => {
-        setFormData(prev => ({
-            ...prev,
-            customPackages: [...(prev.customPackages || []), { name: '', description: '', price: '' }]
-        }));
-    };
-
-    const removeCustomPackage = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            customPackages: prev.customPackages.filter((_, i) => i !== index)
-        }));
-    };
-
-    const updateCustomPackage = (index, field, value) => {
-        setFormData(prev => {
-            const newCustomPackages = [...prev.customPackages];
-            newCustomPackages[index] = { ...newCustomPackages[index], [field]: value };
-            return { ...prev, customPackages: newCustomPackages };
-        });
-    };
     // Instructions Management
     const addInstruction = () => {
         setFormData(prev => ({
@@ -403,7 +382,7 @@ const TirthYatraManagement = () => {
 
         // 1. Append regular text fields first
         Object.keys(formData).forEach(key => {
-            if (['image', 'trainInfo', 'itinerary', 'packages', 'customPackages', 'instructions', 'includes', 'excludes'].includes(key)) return;
+            if (['image', 'trainInfo', 'itinerary', 'packages', 'instructions', 'includes', 'excludes'].includes(key)) return;
             data.append(key, formData[key]);
         });
 
@@ -440,7 +419,6 @@ const TirthYatraManagement = () => {
         data.append('instructions', JSON.stringify(formData.instructions || []));
         data.append('includes', JSON.stringify(formData.includes || []));
         data.append('excludes', JSON.stringify(formData.excludes || []));
-        data.append('customPackages', JSON.stringify(formData.customPackages || []));
 
         // 3. Append Image LAST to ensure Multer parses body fields first
         // 3. Append Image LAST to ensure Multer parses body fields first
@@ -563,13 +541,13 @@ const TirthYatraManagement = () => {
             trainInfo: safeParse(yatra.trainInfo) || [],
             itinerary: safeParse(yatra.itinerary) || [],
             packages: safeParse(yatra.packages) || [],
-            customPackages: safeParse(yatra.customPackages) || [],
             instructions: safeParseArray(yatra.instructions),
             includes: safeParseArray(yatra.includes),
             excludes: safeParseArray(yatra.excludes),
             startDate: yatra.startDate ? yatra.startDate.split('T')[0] : '',
             endDate: yatra.endDate ? yatra.endDate.split('T')[0] : '',
-            advancePaymentPercentage: yatra.advancePaymentPercentage || ''
+            advancePaymentAmount: yatra.advancePaymentAmount ?? 4000,
+            basicCharge: yatra.basicCharge || 0
         });
         // Ensure image field is set in formData if it exists, so if they save without changing, we send the URL.
         if (yatra.image) {
@@ -868,13 +846,24 @@ const TirthYatraManagement = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-semibold text-gray-700">Advance Payment (%)</label>
+                                            <label className="text-sm font-semibold text-gray-700">Advance Payment (₹ per person)</label>
                                             <input
-                                                type="text"
-                                                name="advancePaymentPercentage"
-                                                value={formData.advancePaymentPercentage || ''}
+                                                type="number"
+                                                name="advancePaymentAmount"
+                                                value={formData.advancePaymentAmount ?? 4000}
                                                 onChange={handleInputChange}
-                                                placeholder="e.g. 50"
+                                                placeholder="e.g. 4000"
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-semibold text-gray-700">Basic Charge (₹)</label>
+                                            <input
+                                                type="number"
+                                                name="basicCharge"
+                                                value={formData.basicCharge ?? 0}
+                                                onChange={handleInputChange}
+                                                placeholder="e.g. 1000"
                                                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
                                             />
                                         </div>
@@ -1219,54 +1208,6 @@ const TirthYatraManagement = () => {
                                         ))}
                                     </div>
 
-                                    {/* Custom Packages (Add-ons) Section */}
-                                    <div className="p-4 bg-gray-50 rounded-xl space-y-4 border border-gray-100">
-                                        <div className="flex justify-between items-center">
-                                            <h4 className="font-semibold text-gray-700 flex items-center gap-2">
-                                                <DollarSign size={18} />
-                                                Custom Packages (Add-ons)
-                                            </h4>
-                                            <button
-                                                type="button"
-                                                onClick={addCustomPackage}
-                                                className="text-sm text-orange-600 font-semibold hover:text-orange-700 flex items-center gap-1"
-                                            >
-                                                <Plus size={16} /> Add Custom Package
-                                            </button>
-                                        </div>
-
-                                        {formData.customPackages?.map((pkg, cIndex) => (
-                                            <div key={cIndex} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-4">
-                                                <div className="flex justify-between items-start">
-                                                    <h5 className="text-sm font-bold text-gray-500 uppercase">Add-on #{cIndex + 1}</h5>
-                                                    <button type="button" onClick={() => removeCustomPackage(cIndex)} className="text-red-500 hover:text-red-700">
-                                                        <X size={16} />
-                                                    </button>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <input
-                                                        placeholder="Name (e.g. Prasad Kit)"
-                                                        value={pkg.name}
-                                                        onChange={(e) => updateCustomPackage(cIndex, 'name', e.target.value)}
-                                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none text-sm"
-                                                    />
-                                                    <input
-                                                        type="number"
-                                                        placeholder="Price (₹)"
-                                                        value={pkg.price}
-                                                        onChange={(e) => updateCustomPackage(cIndex, 'price', e.target.value)}
-                                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none text-sm"
-                                                    />
-                                                </div>
-                                                <input
-                                                    placeholder="Description (Optional)"
-                                                    value={pkg.description}
-                                                    onChange={(e) => updateCustomPackage(cIndex, 'description', e.target.value)}
-                                                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none text-sm"
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
 
                                     {/* Instructions Section */}
                                     <div className="p-4 bg-gray-50 rounded-xl space-y-4 border border-gray-100">

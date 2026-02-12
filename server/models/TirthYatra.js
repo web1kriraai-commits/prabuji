@@ -47,11 +47,14 @@ const tirthYatraSchema = new mongoose.Schema({
     ticketPrice: {
         type: String // We can store as string to handle ranges or "Starts from..."
     },
-    advancePaymentPercentage: {
+    advancePaymentAmount: {
         type: Number,
-        default: 0,
-        min: 0,
-        max: 100
+        default: 4000,
+        min: 0
+    },
+    basicCharge: {
+        type: Number,
+        default: 0
     },
     trainInfo: [{
         trainName: String,
@@ -94,11 +97,6 @@ const tirthYatraSchema = new mongoose.Schema({
             cost: Number,
             perPerson: Number
         }]
-    }],
-    customPackages: [{
-        name: String,
-        description: String,
-        price: Number
     }],
     instructions: [String], // Important guidelines
     includes: [String], // What's included

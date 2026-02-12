@@ -4,6 +4,8 @@ const YatraRegistration = require('../models/YatraRegistration');
 // @route   POST /api/yatra-registration
 // @access  Public
 exports.createRegistration = async (req, res) => {
+    return res.status(404).json({ msg: 'Registration via this endpoint is disabled. Please use the Google Form.' });
+    /*
     try {
         const {
             yatraId,
@@ -56,20 +58,6 @@ exports.createRegistration = async (req, res) => {
             }
         }
 
-        // Parse selectedCustomPackages if it's a string
-        let parsedCustomPackages = []; // Default to empty array
-        if (typeof req.body.selectedCustomPackages === 'string') {
-            try {
-                parsedCustomPackages = JSON.parse(req.body.selectedCustomPackages);
-            } catch (e) {
-                parsedCustomPackages = [];
-            }
-        } else if (Array.isArray(req.body.selectedCustomPackages)) {
-            parsedCustomPackages = req.body.selectedCustomPackages;
-        }
-
-        console.log('DEBUG: Incoming selectedCustomPackages:', req.body.selectedCustomPackages);
-        console.log('DEBUG: Parsed parsedCustomPackages:', parsedCustomPackages);
 
         // Handle file uploads - payment screenshot
         let paymentScreenshotUrl = null;
@@ -96,7 +84,6 @@ exports.createRegistration = async (req, res) => {
             accommodationNotes,
             selectedTrain: parsedTrain,
             selectedPackage: parsedPackage,
-            selectedCustomPackages: parsedCustomPackages,
             paymentScreenshot: paymentScreenshotUrl,
             paymentStatus: paymentScreenshotUrl ? 'uploaded' : 'pending',
             totalAmount: parseFloat(totalAmount) || 0,
@@ -111,6 +98,7 @@ exports.createRegistration = async (req, res) => {
         console.error('Error creating yatra registration:', err);
         res.status(500).json({ msg: 'Server Error: ' + err.message });
     }
+    */
 };
 
 // @desc    Get all Yatra Registrations
