@@ -277,7 +277,7 @@ const TirthYatraManagement = () => {
     const addPackage = () => {
         setFormData(prev => ({
             ...prev,
-            packages: [...(prev.packages || []), { name: '', description: '', pricing: [] }]
+            packages: [...(prev.packages || []), { name: '', description: '', days: '', pricing: [] }]
         }));
     };
 
@@ -1167,6 +1167,17 @@ const TirthYatraManagement = () => {
                                                     onChange={(e) => updatePackage(pIndex, 'description', e.target.value)}
                                                     className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none text-sm"
                                                 />
+                                                <div className="flex gap-2 items-center">
+                                                    <label className="text-xs font-semibold text-gray-500 whitespace-nowrap">Duration (Days):</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Auto"
+                                                        value={pkg.days || ''}
+                                                        onChange={(e) => updatePackage(pIndex, 'days', e.target.value)}
+                                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+                                                    />
+                                                    <span className="text-xs text-gray-400 whitespace-nowrap">*Leave empty to use Yatra duration</span>
+                                                </div>
 
                                                 {/* Pricing Tiers */}
                                                 <div className="space-y-2 pl-4 border-l-2 border-gray-100">

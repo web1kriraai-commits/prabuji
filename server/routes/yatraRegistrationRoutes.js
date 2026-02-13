@@ -13,10 +13,10 @@ const {
 } = require('../controllers/yatraRegistrationController');
 
 // Public route - anyone can register (with file uploads)
-// router.post('/', uploadRegistration.fields([
-//     { name: 'paymentScreenshot', maxCount: 1 },
-//     { name: 'aadhaarCards', maxCount: 20 }
-// ]), createRegistration);
+router.post('/', uploadRegistration.fields([
+    { name: 'paymentScreenshot', maxCount: 1 },
+    { name: 'aadhaarCards', maxCount: 20 }
+]), createRegistration);
 
 // Admin routes - order matters! More specific routes first
 router.get('/', authMiddleware, isAdmin, getAllRegistrations);

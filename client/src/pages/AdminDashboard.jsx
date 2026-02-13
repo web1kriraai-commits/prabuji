@@ -554,11 +554,20 @@ const AdminDashboard = () => {
                                                             year: 'numeric'
                                                         })}
                                                     </div>
-                                                    {reg.selectedPackage?.packageName && (
+                                                    {/* Display selected packages (Multi-select) */}
+                                                    {reg.selectedPackages && reg.selectedPackages.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {reg.selectedPackages.map((pkg, pIdx) => (
+                                                                <span key={pIdx} className="inline-block px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">
+                                                                    {pkg.packageName}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : reg.selectedPackage?.packageName ? (
                                                         <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">
                                                             {reg.selectedPackage.packageName}
                                                         </span>
-                                                    )}
+                                                    ) : null}
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="text-sm">
@@ -1391,7 +1400,29 @@ const AdminDashboard = () => {
                                                 </div>
                                             </div>
                                         )}
-                                        {selectedRegistration.selectedPackage && (
+                                        {/* Multi-select Packages Display */}
+                                        {(selectedRegistration.selectedPackages && selectedRegistration.selectedPackages.length > 0) ? (
+                                            <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
+                                                <h3 className="font-semibold text-gray-900 mb-3">Packages Selected</h3>
+                                                <div className="space-y-3">
+                                                    {selectedRegistration.selectedPackages.map((pkg, idx) => (
+                                                        <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200">
+                                                            <p className="font-medium text-purple-700">{pkg.packageName}</p>
+                                                            {pkg.description && <p className="text-xs text-gray-500 mb-1">{pkg.description}</p>}
+                                                            <div className="text-sm text-gray-600 grid grid-cols-2 gap-2 mt-2">
+                                                                {pkg.pricingType && <p>Type: <span className="font-medium">{pkg.pricingType}</span></p>}
+                                                                {(pkg.pricePerPerson || pkg.cost) && (
+                                                                    <p>Price/Person: <span className="font-medium">₹{pkg.pricePerPerson || pkg.cost}</span></p>
+                                                                )}
+                                                                {pkg.totalCost && (
+                                                                    <p className="col-span-2 font-bold text-gray-800">Total: ₹{pkg.totalCost}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : selectedRegistration.selectedPackage && (
                                             <div className="border border-gray-100 rounded-xl p-4">
                                                 <h3 className="font-semibold text-gray-900 mb-2">Package Selected</h3>
                                                 <div className="text-sm text-gray-600">

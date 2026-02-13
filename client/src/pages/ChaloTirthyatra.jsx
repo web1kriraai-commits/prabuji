@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fa';
 import tem2 from '../assets/image/temp2.jpg';
 import api from '../lib/api';
-// import MultiStepRegistrationForm from '../components/MultiStepRegistrationForm';
+import MultiStepRegistrationForm from '../components/MultiStepRegistrationForm';
 import ContactModal from '../components/ContactModal';
 
 const ChaloTirthyatra = () => {
@@ -74,12 +74,10 @@ const ChaloTirthyatra = () => {
 
 const YatraCard = ({ yatra, index }) => {
     const [activeTab, setActiveTab] = useState('overview');
-    // const [showRegisterModal, setShowRegisterModal] = useState(false);
+    const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
-    const googleFormLink = "https://docs.google.com/forms/d/e/1FAIpQLSez9_u8mH0Y4vwKzP8mQi1BNzJ5UAjkdMAAuib1bhh2qy_9Rw/viewform";
 
     // Auto-open modal if there's saved registration data
-    /* 
     useEffect(() => {
         const savedData = localStorage.getItem(`yatra_registration_${yatra._id}`);
         if (savedData) {
@@ -95,7 +93,6 @@ const YatraCard = ({ yatra, index }) => {
             }
         }
     }, [yatra._id]);
-    */
 
     const tabs = [
         { id: 'overview', label: 'Overview', icon: <FaInfoCircle /> },
@@ -121,16 +118,14 @@ const YatraCard = ({ yatra, index }) => {
                     onError={(e) => { e.target.src = tem2; }}
                 />
                 {/* Register Button on Image */}
-                {/* <motion.a
-                    href={googleFormLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <motion.button
+                    onClick={() => setShowRegisterModal(true)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="absolute top-4 right-4 md:top-6 md:right-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-full font-bold shadow-xl flex items-center gap-2 text-sm md:text-base z-10 cursor-pointer no-underline"
+                    className="absolute top-4 right-4 md:top-6 md:right-6 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-4 py-2 md:px-6 md:py-3 rounded-full font-bold shadow-xl flex items-center gap-2 text-sm md:text-base z-10 cursor-pointer"
                 >
                     <FaUserPlus /> Register Now
-                </motion.a> */}
+                </motion.button>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 md:p-10 text-white">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
@@ -155,7 +150,6 @@ const YatraCard = ({ yatra, index }) => {
             </div>
 
             {/* Multi-Step Registration Modal */}
-            {/* 
             <AnimatePresence>
                 {showRegisterModal && (
                     <MultiStepRegistrationForm
@@ -164,7 +158,6 @@ const YatraCard = ({ yatra, index }) => {
                     />
                 )}
             </AnimatePresence>
-            */}
 
             {/* Contact Modal */}
             <ContactModal
@@ -217,14 +210,12 @@ const YatraCard = ({ yatra, index }) => {
                     )}
                 </div>
                 <div className="w-full md:w-auto flex flex-col md:flex-row gap-4 justify-center">
-                    {/* <a
-                        href={googleFormLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 no-underline cursor-pointer"
+                    <button
+                        onClick={() => setShowRegisterModal(true)}
+                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
                     >
                         <FaUserPlus size={20} /> Register Now
-                    </a> */}
+                    </button>
                     <WhatsAppButton link={yatra.whatsappLink} />
                     <button
                         onClick={() => setShowContactModal(true)}

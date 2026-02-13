@@ -67,15 +67,18 @@ const yatraRegistrationSchema = new mongoose.Schema({
         trainName: String,
         trainNumber: String,
         classCategory: String,
-        price: Number
+        price: Number,
+        boardingStation: String,
+        alightingStation: String
     },
-    // Package selection
-    selectedPackage: {
+    selectedPackages: [{
         packageName: String,
+        description: String,
         pricingType: String,
         pricePerPerson: Number,
+        days: Number,
         totalCost: Number
-    },
+    }],
     // Payment details
     paymentScreenshot: {
         type: String // Cloudinary URL

@@ -11,7 +11,7 @@ const storage = new CloudinaryStorage({
         return {
             folder: 'yatra-registrations',
             resource_type: 'auto',
-            allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'pdf'],
+            allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'avif', 'pdf'],
             // Apply transformation only for images
             transformation: isPdf ? undefined : [{ width: 1200, height: 1200, crop: 'limit' }]
         };

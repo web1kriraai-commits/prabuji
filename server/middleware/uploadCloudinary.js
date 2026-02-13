@@ -6,7 +6,7 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'tirth-yatra',
-        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'avif'],
         // transformation: [{ width: 1000, height: 1000, crop: 'limit' }] // Optional: Resize on upload
     }
 });

@@ -8,7 +8,7 @@ const tirthYatraSchema = new mongoose.Schema({
     },
     icon: {
         type: String,
-        default: '🛕' // Default icon if none provided
+        default: '🛕'
     },
     image: {
         type: String,
@@ -92,6 +92,7 @@ const tirthYatraSchema = new mongoose.Schema({
     packages: [{
         name: String, // e.g., "Mayapur Stay", "Puri Stay"
         description: String,
+        days: Number, // Override duration for this specific package
         pricing: [{
             type: { type: String }, // e.g., "Double Sharing", "Triple Sharing"
             cost: Number,

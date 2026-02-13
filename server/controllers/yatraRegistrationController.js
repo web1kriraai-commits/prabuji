@@ -4,8 +4,6 @@ const YatraRegistration = require('../models/YatraRegistration');
 // @route   POST /api/yatra-registration
 // @access  Public
 exports.createRegistration = async (req, res) => {
-    return res.status(404).json({ msg: 'Registration via this endpoint is disabled. Please use the Google Form.' });
-    /*
     try {
         const {
             yatraId,
@@ -16,7 +14,7 @@ exports.createRegistration = async (req, res) => {
             sameRoomPreference,
             accommodationNotes,
             selectedTrain,
-            selectedPackage,
+            selectedPackages,
             totalAmount,
             suggestions,
             isAdvancePayment,
@@ -48,16 +46,17 @@ exports.createRegistration = async (req, res) => {
             }
         }
 
-        // Parse selectedPackage if it's a string
-        let parsedPackage = selectedPackage;
-        if (typeof selectedPackage === 'string') {
+        // Parse selectedPackages if it's a string
+        let parsedPackages = selectedPackages;
+        if (typeof selectedPackages === 'string') {
             try {
-                parsedPackage = JSON.parse(selectedPackage);
+                parsedPackages = JSON.parse(selectedPackages);
             } catch (e) {
-                parsedPackage = null;
+                parsedPackages = [];
             }
+        } else if (!selectedPackages) {
+            parsedPackages = [];
         }
-
 
         // Handle file uploads - payment screenshot
         let paymentScreenshotUrl = null;
@@ -83,7 +82,7 @@ exports.createRegistration = async (req, res) => {
             sameRoomPreference: sameRoomPreference === 'true' || sameRoomPreference === true,
             accommodationNotes,
             selectedTrain: parsedTrain,
-            selectedPackage: parsedPackage,
+            selectedPackages: parsedPackages,
             paymentScreenshot: paymentScreenshotUrl,
             paymentStatus: paymentScreenshotUrl ? 'uploaded' : 'pending',
             totalAmount: parseFloat(totalAmount) || 0,
@@ -96,9 +95,12 @@ exports.createRegistration = async (req, res) => {
         res.status(201).json(registration);
     } catch (err) {
         console.error('Error creating yatra registration:', err);
-        res.status(500).json({ msg: 'Server Error: ' + err.message });
+        // Include specific error details for debugging (Mongoose validation errors, etc.)
+        res.status(500).json({
+            msg: 'Server Error: ' + err.message,
+            error: err.name === 'ValidationError' ? Object.values(err.errors).map(e => e.message) : err.message
+        });
     }
-    */
 };
 
 // @desc    Get all Yatra Registrations

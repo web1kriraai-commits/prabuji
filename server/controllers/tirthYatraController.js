@@ -59,7 +59,9 @@ exports.createTirthYatra = async (req, res) => {
             includes,
             excludes,
             customPackages,
-            advancePaymentPercentage
+            advancePaymentPercentage,
+            basicCharge,
+            advancePaymentAmount
         } = req.body;
 
         let image = req.body.image;
@@ -132,7 +134,9 @@ exports.createTirthYatra = async (req, res) => {
             includes: parseAndSanitize(includes, 'includes'),
             excludes: parseAndSanitize(excludes, 'excludes'),
             customPackages: validCustomPackages,
-            advancePaymentPercentage: advancePaymentPercentage || 0
+            advancePaymentPercentage: advancePaymentPercentage || 0,
+            basicCharge: basicCharge || 0,
+            advancePaymentAmount: advancePaymentAmount || 0
         });
 
         const tirthYatra = await newTirthYatra.save();
