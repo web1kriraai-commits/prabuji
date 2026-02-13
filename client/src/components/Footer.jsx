@@ -306,7 +306,7 @@ const Footer = () => {
                   color: 'rgba(255, 255, 255, 0.85)',
                   lineHeight: 1.6
                 }}>
-                  +91 9924958709
+                  +91 7600156255
                 </p>
               </div>
               <div style={{

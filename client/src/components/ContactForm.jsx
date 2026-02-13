@@ -180,8 +180,8 @@ const ContactForm = () => {
                     <ContactRow
                         icon={<FaPhoneAlt />}
                         title="Call Us"
-                        value="+91 9924958709"
-                        href="tel:+919924958709"
+                        value="+91 7600156255"
+                        href="tel:+917600156255"
                         color="#1F7A8C"
                         label="phone"
                     />
@@ -197,7 +197,7 @@ const ContactForm = () => {
 
             <div style={{ marginTop: '2rem' }}>
                 <motion.a
-                    href="https://api.whatsapp.com/send/?phone=919924958709&text&type=phone_number&app_absent=0"
+                    href="https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0"
                     target="_blank"
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.02 }}

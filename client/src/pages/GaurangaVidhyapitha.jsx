@@ -151,53 +151,63 @@ const ImageSide = ({ image, title }) => (
     </div>
 );
 
-const ContentSide = ({ title, description, buttonText }) => (
-    <div style={{
-        flex: '1 1 400px',
-        padding: '3rem',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center'
-    }}>
-        <h2 style={{
-            fontSize: '1.8rem',
-            color: '#022B3A',
-            marginBottom: '1rem',
-            fontWeight: 800
-        }}>{title}</h2>
-        <p style={{
-            fontSize: '1.1rem',
-            color: '#022B3A',
-            opacity: 0.8,
-            marginBottom: '2rem',
-            lineHeight: 1.6,
-            maxWidth: '400px'
-        }}>{description}</p>
-        <button style={{
-            padding: '0.8rem 2rem',
-            background: 'transparent',
-            border: '1px solid #022B3A',
-            color: '#022B3A',
-            fontSize: '1rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.3s',
-            borderRadius: '4px'
-        }}
-            onMouseOver={(e) => {
-                e.currentTarget.style.background = '#022B3A';
-                e.currentTarget.style.color = '#fff';
-            }}
-            onMouseOut={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = '#022B3A';
-            }}
-        >
-            {buttonText}
-        </button>
-    </div>
-);
+const ContentSide = ({ title, description, buttonText }) => {
+    const whatsappLink = `https://wa.me/917600156255?text=${encodeURIComponent(`Hare Krishna, I would like to register for ${title}.`)}`;
+
+    return (
+        <div style={{
+            flex: '1 1 400px',
+            padding: '3rem',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center'
+        }}>
+            <h2 style={{
+                fontSize: '1.8rem',
+                color: '#022B3A',
+                marginBottom: '1rem',
+                fontWeight: 800
+            }}>{title}</h2>
+            <p style={{
+                fontSize: '1.1rem',
+                color: '#022B3A',
+                opacity: 0.8,
+                marginBottom: '2rem',
+                lineHeight: 1.6,
+                maxWidth: '400px'
+            }}>{description}</p>
+            <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    padding: '0.8rem 2rem',
+                    background: 'transparent',
+                    border: '1px solid #022B3A',
+                    color: '#022B3A',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    borderRadius: '4px',
+                    textDecoration: 'none',
+                    display: 'inline-block'
+                }}
+                onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#022B3A';
+                    e.currentTarget.style.color = '#fff';
+                }}
+                onMouseOut={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#022B3A';
+                }}
+            >
+                {buttonText}
+            </a>
+        </div>
+    );
+};
 
 export default GaurangaVidhyapitha;
