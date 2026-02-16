@@ -63,14 +63,14 @@ const yatraRegistrationSchema = new mongoose.Schema({
         trim: true
     },
     // Train selection
-    selectedTrain: {
+    selectedTrains: [{
         trainName: String,
         trainNumber: String,
         classCategory: String,
         price: Number,
         boardingStation: String,
         alightingStation: String
-    },
+    }],
     selectedPackages: [{
         packageName: String,
         description: String,

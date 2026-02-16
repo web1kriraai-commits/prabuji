@@ -58,8 +58,6 @@ exports.createTirthYatra = async (req, res) => {
             instructions,
             includes,
             excludes,
-            customPackages,
-            advancePaymentPercentage,
             basicCharge,
             advancePaymentAmount
         } = req.body;
@@ -104,14 +102,7 @@ exports.createTirthYatra = async (req, res) => {
         const parsedItinerary = parseAndSanitize(itinerary, 'itinerary');
         const parsedPackages = parseAndSanitize(packages, 'packages');
         const parsedInstructions = parseAndSanitize(instructions, 'instructions');
-        const parsedCustomPackages = parseAndSanitize(customPackages, 'customPackages');
-        console.log('DEBUG: Raw customPackages:', customPackages);
-        console.log('DEBUG: Parsed Custom Packages (Create):', JSON.stringify(parsedCustomPackages, null, 2));
 
-        // Ensure customPackages is an array of objects
-        const validCustomPackages = Array.isArray(parsedCustomPackages)
-            ? parsedCustomPackages.filter(item => typeof item === 'object' && item !== null)
-            : [];
 
         const newTirthYatra = new TirthYatra({
             title,
@@ -133,7 +124,7 @@ exports.createTirthYatra = async (req, res) => {
             instructions: parsedInstructions,
             includes: parseAndSanitize(includes, 'includes'),
             excludes: parseAndSanitize(excludes, 'excludes'),
-            customPackages: validCustomPackages,
+            customPackages: [], // Explicitly empty or remove if schema verified
             advancePaymentPercentage: advancePaymentPercentage || 0,
             basicCharge: basicCharge || 0,
             advancePaymentAmount: advancePaymentAmount || 0
@@ -210,22 +201,12 @@ exports.updateTirthYatra = async (req, res) => {
             }
         };
 
-        const fieldsToParse = ['trainInfo', 'itinerary', 'packages', 'instructions', 'includes', 'excludes', 'customPackages'];
+        const fieldsToParse = ['trainInfo', 'itinerary', 'packages', 'instructions', 'includes', 'excludes'];
         fieldsToParse.forEach(field => {
             if (req.body[field]) {
                 const parsed = parseAndSanitize(req.body[field], field);
                 if (parsed !== undefined) {
-                    if (field === 'customPackages') {
-                        // Ensure it's an array of objects
-                        if (Array.isArray(parsed)) {
-                            updateData[field] = parsed.filter(item => typeof item === 'object' && item !== null);
-                        } else {
-                            updateData[field] = [];
-                        }
-                        console.log('DEBUG: Parsed Custom Packages (Update):', JSON.stringify(updateData[field], null, 2));
-                    } else {
-                        updateData[field] = parsed;
-                    }
+                    updateData[field] = parsed;
                 }
             }
         });

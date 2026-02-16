@@ -13,7 +13,7 @@ exports.createRegistration = async (req, res) => {
             members,
             sameRoomPreference,
             accommodationNotes,
-            selectedTrain,
+            selectedTrains,
             selectedPackages,
             totalAmount,
             suggestions,
@@ -36,14 +36,16 @@ exports.createRegistration = async (req, res) => {
             }
         }
 
-        // Parse selectedTrain if it's a string
-        let parsedTrain = selectedTrain;
-        if (typeof selectedTrain === 'string') {
+        // Parse selectedTrains if it's a string
+        let parsedTrains = selectedTrains;
+        if (typeof selectedTrains === 'string') {
             try {
-                parsedTrain = JSON.parse(selectedTrain);
+                parsedTrains = JSON.parse(selectedTrains);
             } catch (e) {
-                parsedTrain = null;
+                parsedTrains = [];
             }
+        } else if (!selectedTrains) {
+            parsedTrains = [];
         }
 
         // Parse selectedPackages if it's a string
@@ -81,7 +83,7 @@ exports.createRegistration = async (req, res) => {
             members: parsedMembers || [],
             sameRoomPreference: sameRoomPreference === 'true' || sameRoomPreference === true,
             accommodationNotes,
-            selectedTrain: parsedTrain,
+            selectedTrains: parsedTrains,
             selectedPackages: parsedPackages,
             paymentScreenshot: paymentScreenshotUrl,
             paymentStatus: paymentScreenshotUrl ? 'uploaded' : 'pending',
