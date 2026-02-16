@@ -218,10 +218,10 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                 const duration = pkg.days ? parseInt(pkg.days) : yatraDuration;
                 if (pkg.selectedPricing) {
                     const price = parseFloat(pkg.selectedPricing.perPerson || pkg.selectedPricing.cost || 0);
-                    // Formula: Price * Duration (Per package, not per person)
-                    total += price * duration;
+                    // Formula: Price * Duration * Persons
+                    total += price * duration * memberCount;
                 } else if (pkg.pricePerPerson) {
-                    total += parseFloat(pkg.pricePerPerson) * duration;
+                    total += parseFloat(pkg.pricePerPerson) * duration * memberCount;
                 }
             });
         }
@@ -426,7 +426,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                     pricingType: pkg.selectedPricing?.type,
                     pricePerPerson: pkg.selectedPricing?.perPerson || pkg.selectedPricing?.cost,
                     days: pkg.days ? parseInt(pkg.days) : undefined,
-                    totalCost: (parseFloat(pkg.selectedPricing?.perPerson || pkg.selectedPricing?.cost || 0) * (pkg.days ? parseInt(pkg.days) : yatraDuration))
+                    totalCost: (parseFloat(pkg.selectedPricing?.perPerson || pkg.selectedPricing?.cost || 0) * (pkg.days ? parseInt(pkg.days) : yatraDuration) * members.length)
                 }));
                 formData.append('selectedPackages', JSON.stringify(pkgsToSave));
             }
@@ -1122,10 +1122,10 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="font-medium text-xs text-gray-500">
-                                                        ₹{pkg.selectedPricing.perPerson || pkg.selectedPricing.cost} × {duration} days
+                                                        ₹{pkg.selectedPricing.perPerson || pkg.selectedPricing.cost} × {duration} days × {members.length}
                                                     </p>
                                                     <p className="font-bold text-gray-800">
-                                                        ₹{(parseFloat(pkg.selectedPricing.perPerson || pkg.selectedPricing.cost) * duration).toLocaleString()}
+                                                        ₹{(parseFloat(pkg.selectedPricing.perPerson || pkg.selectedPricing.cost) * duration * members.length).toLocaleString()}
                                                     </p>
                                                 </div>
                                             </div>
