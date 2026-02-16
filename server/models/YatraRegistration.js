@@ -77,7 +77,12 @@ const yatraRegistrationSchema = new mongoose.Schema({
         pricingType: String,
         pricePerPerson: Number,
         days: Number,
-        totalCost: Number
+        totalCost: Number,
+        guestDetails: {
+            name: String,
+            age: Number,
+            phone: String
+        }
     }],
     // Payment details
     paymentScreenshot: {

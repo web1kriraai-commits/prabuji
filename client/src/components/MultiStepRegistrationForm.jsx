@@ -218,8 +218,17 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                 const duration = pkg.days ? parseInt(pkg.days) : yatraDuration;
                 if (pkg.selectedPricing) {
                     const price = parseFloat(pkg.selectedPricing.perPerson || pkg.selectedPricing.cost || 0);
-                    // Formula: Price * Duration * Persons
-                    total += price * duration * memberCount;
+                    // Check if it's "Extra Mattress" (case-insensitive)
+                    const isExtraMattress = pkg.selectedPricing.type?.toLowerCase().includes('extra mattress') ||
+                        pkg.selectedPricing.type?.toLowerCase().includes('mattress');
+
+                    if (isExtraMattress) {
+                        // Formula: Price * Duration * 1 (Fixed per mattress)
+                        total += price * duration;
+                    } else {
+                        // Formula: Price * Duration * Persons
+                        total += price * duration * memberCount;
+                    }
                 } else if (pkg.pricePerPerson) {
                     total += parseFloat(pkg.pricePerPerson) * duration * memberCount;
                 }
@@ -420,14 +429,26 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
             if (selectedPackages && selectedPackages.length > 0) {
                 // Flatten structure for saving
-                const pkgsToSave = selectedPackages.map(pkg => ({
-                    packageName: pkg.packageName,
-                    description: pkg.description,
-                    pricingType: pkg.selectedPricing?.type,
-                    pricePerPerson: pkg.selectedPricing?.perPerson || pkg.selectedPricing?.cost,
-                    days: pkg.days ? parseInt(pkg.days) : undefined,
-                    totalCost: (parseFloat(pkg.selectedPricing?.perPerson || pkg.selectedPricing?.cost || 0) * (pkg.days ? parseInt(pkg.days) : yatraDuration) * members.length)
-                }));
+                const pkgsToSave = selectedPackages.map(pkg => {
+                    const isExtraMattress = pkg.selectedPricing.type?.toLowerCase().includes('extra mattress') ||
+                        pkg.selectedPricing.type?.toLowerCase().includes('mattress');
+
+                    const price = parseFloat(pkg.selectedPricing?.perPerson || pkg.selectedPricing?.cost || 0);
+                    const duration = pkg.days ? parseInt(pkg.days) : yatraDuration;
+                    const totalCost = isExtraMattress
+                        ? (price * duration) // Per mattress total
+                        : (price * duration * members.length); // Per person total for others
+
+                    return {
+                        packageName: pkg.packageName,
+                        description: pkg.description,
+                        pricingType: pkg.selectedPricing?.type,
+                        pricePerPerson: price,
+                        days: pkg.days ? parseInt(pkg.days) : undefined,
+                        totalCost: totalCost,
+                        guestDetails: pkg.guestDetails // Pass the guest details if present
+                    };
+                });
                 formData.append('selectedPackages', JSON.stringify(pkgsToSave));
             }
 
@@ -1021,6 +1042,23 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                 );
 
             case 6: // Packages Selection
+                const updateGuestDetails = (pkgName, pricingType, field, value) => {
+                    setSelectedPackages(prevPackages =>
+                        prevPackages.map(p => {
+                            if (p.packageName === pkgName && p.selectedPricing?.type === pricingType) {
+                                return {
+                                    ...p,
+                                    guestDetails: {
+                                        ...p.guestDetails,
+                                        [field]: value
+                                    }
+                                };
+                            }
+                            return p;
+                        })
+                    );
+                };
+
                 return (
                     <div className="space-y-6">
                         {packages.length > 0 && (
@@ -1034,41 +1072,90 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
                                             {/* Render Pricing Options */}
                                             {pkg.pricing && pkg.pricing.length > 0 ? (
-                                                <div className="space-y-2">
-                                                    {pkg.pricing.map((price, idx) => (
-                                                        <label
-                                                            key={idx}
-                                                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedPackages.some(p => p.packageName === pkg.name && p.selectedPricing?.type === price.type)
-                                                                ? 'border-teal-500 bg-teal-50 ring-1 ring-teal-500'
-                                                                : 'border-gray-200 hover:bg-gray-50'
-                                                                }`}
-                                                        >
-                                                            <div className="flex items-center gap-2">
-                                                                <input
-                                                                    type="radio"
-                                                                    name={`package-price-${index}`}
-                                                                    checked={selectedPackages.some(p => p.packageName === pkg.name && p.selectedPricing?.type === price.type)}
-                                                                    onChange={() => {
-                                                                        const newPackage = {
-                                                                            packageName: pkg.name,
-                                                                            description: pkg.description,
-                                                                            days: pkg.days,
-                                                                            selectedPricing: price
-                                                                        };
-                                                                        // Remove existing selection for this package group and add new one
-                                                                        const updatedPackages = selectedPackages.filter(p => p.packageName !== pkg.name);
-                                                                        setSelectedPackages([...updatedPackages, newPackage]);
-                                                                    }}
-                                                                    className="w-4 h-4 text-teal-600"
-                                                                />
-                                                                <span className="font-medium text-gray-700">{price.type}</span>
+                                                <div className="space-y-4">
+                                                    {pkg.pricing.map((price, idx) => {
+                                                        const isSelected = selectedPackages.some(p => p.packageName === pkg.name && p.selectedPricing?.type === price.type);
+                                                        const isExtraMattress = price.type?.toLowerCase().includes('extra mattress') ||
+                                                            price.type?.toLowerCase().includes('mattress');
+                                                        const currentSelection = selectedPackages.find(p => p.packageName === pkg.name && p.selectedPricing?.type === price.type);
+
+                                                        return (
+                                                            <div key={idx} className={`rounded-xl border transition-all ${isSelected ? 'border-teal-500 bg-teal-50/50' : 'border-gray-200'}`}>
+                                                                <label className="flex items-center justify-between p-3 cursor-pointer">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={isSelected}
+                                                                            onChange={() => {
+                                                                                if (isSelected) {
+                                                                                    // Remove selection
+                                                                                    setSelectedPackages(selectedPackages.filter(p => !(p.packageName === pkg.name && p.selectedPricing?.type === price.type)));
+                                                                                } else {
+                                                                                    // Add selection
+                                                                                    const newPackage = {
+                                                                                        packageName: pkg.name,
+                                                                                        description: pkg.description,
+                                                                                        days: pkg.days,
+                                                                                        selectedPricing: price,
+                                                                                        // Initialize guest details for extra mattress
+                                                                                        guestDetails: isExtraMattress ? { name: '', age: '', phone: '' } : undefined
+                                                                                    };
+                                                                                    setSelectedPackages([...selectedPackages, newPackage]);
+                                                                                }
+                                                                            }}
+                                                                            className="w-5 h-5 text-teal-600 rounded focus:ring-teal-500"
+                                                                        />
+                                                                        <span className="font-medium text-gray-700">{price.type}</span>
+                                                                    </div>
+                                                                    <div className="text-right">
+                                                                        <span className="font-bold text-teal-700 block">₹{price.perPerson}</span>
+                                                                        <span className="text-xs text-gray-500">{isExtraMattress ? 'per mattress' : 'per person'}</span>
+                                                                    </div>
+                                                                </label>
+
+                                                                {/* Extra Mattress Guest Details Form */}
+                                                                {isSelected && isExtraMattress && currentSelection && (
+                                                                    <div className="p-4 border-t border-teal-100 bg-white rounded-b-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                                                                        <h6 className="text-sm font-semibold text-teal-800 mb-3 flex items-center gap-2">
+                                                                            <FaUser size={12} /> Person Details for Extra Mattress
+                                                                        </h6>
+                                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                                            <div>
+                                                                                <label className="block text-xs font-medium text-gray-500 mb-1">Name</label>
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={currentSelection.guestDetails?.name || ''}
+                                                                                    onChange={(e) => updateGuestDetails(pkg.name, price.type, 'name', e.target.value)}
+                                                                                    placeholder="Guest Name"
+                                                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-teal-500 outline-none"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="block text-xs font-medium text-gray-500 mb-1">Age</label>
+                                                                                <input
+                                                                                    type="number"
+                                                                                    value={currentSelection.guestDetails?.age || ''}
+                                                                                    onChange={(e) => updateGuestDetails(pkg.name, price.type, 'age', e.target.value)}
+                                                                                    placeholder="Age"
+                                                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-teal-500 outline-none"
+                                                                                />
+                                                                            </div>
+                                                                            <div>
+                                                                                <label className="block text-xs font-medium text-gray-500 mb-1">Phone</label>
+                                                                                <input
+                                                                                    type="tel"
+                                                                                    value={currentSelection.guestDetails?.phone || ''}
+                                                                                    onChange={(e) => updateGuestDetails(pkg.name, price.type, 'phone', e.target.value)}
+                                                                                    placeholder="Mobile No."
+                                                                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-teal-500 outline-none"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div className="text-right">
-                                                                <span className="font-bold text-teal-700 block">₹{price.perPerson}</span>
-                                                                <span className="text-xs text-gray-500">per person</span>
-                                                            </div>
-                                                        </label>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : (
                                                 <p className="text-sm text-gray-500 italic">No pricing details available.</p>
@@ -1114,18 +1201,26 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                 <div className="space-y-2 border-t border-dashed pt-2">
                                     {selectedPackages.map((pkg, idx) => {
                                         const duration = pkg.days ? parseInt(pkg.days) : yatraDuration;
+                                        const isExtraMattress = pkg.selectedPricing.type?.toLowerCase().includes('extra mattress') ||
+                                            pkg.selectedPricing.type?.toLowerCase().includes('mattress');
+
                                         return (
-                                            <div key={idx} className="flex justify-between items-start text-sm">
+                                            <div key={idx} className="flex justify-between items-start text-sm border-b border-dashed border-gray-100 pb-2 last:border-0 last:pb-0">
                                                 <div>
                                                     <p className="font-semibold text-gray-700">Package: {pkg.packageName}</p>
                                                     <p className="text-gray-500">{pkg.selectedPricing.type}</p>
+                                                    {isExtraMattress && pkg.guestDetails?.name && (
+                                                        <p className="text-xs text-teal-600 mt-1">
+                                                            For: {pkg.guestDetails.name} ({pkg.guestDetails.age}y)
+                                                        </p>
+                                                    )}
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="font-medium text-xs text-gray-500">
-                                                        ₹{pkg.selectedPricing.perPerson || pkg.selectedPricing.cost} × {duration} days × {members.length}
+                                                        ₹{pkg.selectedPricing.perPerson || pkg.selectedPricing.cost} × {duration} days × {isExtraMattress ? '1 mattress' : `${members.length} persons`}
                                                     </p>
                                                     <p className="font-bold text-gray-800">
-                                                        ₹{(parseFloat(pkg.selectedPricing.perPerson || pkg.selectedPricing.cost) * duration * members.length).toLocaleString()}
+                                                        ₹{(parseFloat(pkg.selectedPricing.perPerson || pkg.selectedPricing.cost) * duration * (isExtraMattress ? 1 : members.length)).toLocaleString()}
                                                     </p>
                                                 </div>
                                             </div>
