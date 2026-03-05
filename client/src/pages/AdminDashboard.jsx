@@ -568,6 +568,16 @@ const AdminDashboard = () => {
                                                             {reg.selectedPackage.packageName}
                                                         </span>
                                                     ) : null}
+                                                    {/* Display selected trains */}
+                                                    {reg.selectedTrains && reg.selectedTrains.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {reg.selectedTrains.map((train, tIdx) => (
+                                                                <span key={tIdx} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-indigo-100 text-indigo-700 rounded-full">
+                                                                    🚂 {train.trainName}{train.classCategory ? ` (${train.classCategory})` : ''}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <div className="text-sm">
@@ -1384,7 +1394,70 @@ const AdminDashboard = () => {
                                     </div>
                                 )}
 
-                                {/* Travel & Package */}
+                                {/* Selected Trains */}
+                                {selectedRegistration.selectedTrains && selectedRegistration.selectedTrains.length > 0 && (
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                            <span className="text-lg">🚂</span>
+                                            Selected Trains ({selectedRegistration.selectedTrains.length})
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {selectedRegistration.selectedTrains.map((train, idx) => (
+                                                <div key={idx} className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-4 shadow-sm">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="font-bold text-indigo-900 text-base">{train.trainName}</span>
+                                                                {train.trainNumber && (
+                                                                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                                                                        #{train.trainNumber}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-sm text-gray-600 space-y-1 mt-2">
+                                                                {train.classCategory && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-gray-500">Class:</span>
+                                                                        <span className="font-medium bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800">{train.classCategory}</span>
+                                                                    </div>
+                                                                )}
+                                                                {(train.boardingStation || train.alightingStation) && (
+                                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                                        {train.boardingStation && (
+                                                                            <span className="flex items-center gap-1">
+                                                                                <span className="text-green-600 text-xs">▲</span>
+                                                                                <span className="text-gray-500">From:</span>
+                                                                                <span className="font-medium text-gray-800">{train.boardingStation}</span>
+                                                                            </span>
+                                                                        )}
+                                                                        {train.boardingStation && train.alightingStation && (
+                                                                            <span className="text-gray-400">→</span>
+                                                                        )}
+                                                                        {train.alightingStation && (
+                                                                            <span className="flex items-center gap-1">
+                                                                                <span className="text-red-600 text-xs">▼</span>
+                                                                                <span className="text-gray-500">To:</span>
+                                                                                <span className="font-medium text-gray-800">{train.alightingStation}</span>
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {train.price > 0 && (
+                                                            <div className="text-right flex-shrink-0">
+                                                                <p className="text-xs text-gray-500 uppercase">Price</p>
+                                                                <p className="text-lg font-bold text-indigo-700">₹{train.price.toLocaleString()}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Travel & Package (Legacy single train fallback) */}
                                 {(selectedRegistration.selectedTrain || selectedRegistration.selectedPackage) && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         {selectedRegistration.selectedTrain && (

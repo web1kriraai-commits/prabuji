@@ -6,7 +6,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin: ['https://prabuji-5-u3jo.onrender.com', 'http://localhost:5173', 'http://localhost:5000'],
+    origin: ['https://prabuji-5-u3jo.onrender.com', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5000'],
     credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
@@ -49,6 +49,7 @@ app.use((err, req, res, next) => {
     console.error('Global Error:', err);
     console.error('Stack:', err.stack);
     res.status(500).json({
+        msg: err.message || 'Internal Server Error',
         error: 'Internal Server Error',
         message: err.message,
         details: process.env.NODE_ENV === 'development' ? err.stack : undefined

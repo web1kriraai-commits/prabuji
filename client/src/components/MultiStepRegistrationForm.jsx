@@ -430,8 +430,9 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             if (selectedPackages && selectedPackages.length > 0) {
                 // Flatten structure for saving
                 const pkgsToSave = selectedPackages.map(pkg => {
-                    const isExtraMattress = pkg.selectedPricing.type?.toLowerCase().includes('extra mattress') ||
-                        pkg.selectedPricing.type?.toLowerCase().includes('mattress');
+                    const pricingType = pkg.selectedPricing?.type || '';
+                    const isExtraMattress = pricingType.toLowerCase().includes('extra mattress') ||
+                        pricingType.toLowerCase().includes('mattress');
 
                     const price = parseFloat(pkg.selectedPricing?.perPerson || pkg.selectedPricing?.cost || 0);
                     const duration = pkg.days ? parseInt(pkg.days) : yatraDuration;
@@ -442,7 +443,7 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                     return {
                         packageName: pkg.packageName,
                         description: pkg.description,
-                        pricingType: pkg.selectedPricing?.type,
+                        pricingType: pricingType,
                         pricePerPerson: price,
                         days: pkg.days ? parseInt(pkg.days) : undefined,
                         totalCost: totalCost,
@@ -487,7 +488,9 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
             localStorage.removeItem(`yatra_registration_${yatra._id}`);
         } catch (error) {
             console.error('Registration error:', error);
-            setSubmitError(error.response?.data?.msg || 'Failed to submit registration. Please try again.');
+            console.error('Error details:', error.response?.data || error.message);
+            const serverMsg = error.response?.data?.msg || error.response?.data?.message || error.response?.data?.error;
+            setSubmitError(serverMsg || error.message || 'Failed to submit registration. Please try again.');
         } finally {
             setSubmitting(false);
         }
