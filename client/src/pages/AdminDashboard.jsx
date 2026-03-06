@@ -1198,7 +1198,7 @@ const AdminDashboard = () => {
                             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-teal-50 to-white sticky top-0 z-10">
                                 <div>
                                     <h2 className="text-xl font-bold text-gray-900">Registration Details</h2>
-                                    <p className="text-sm text-gray-500">ID: {selectedRegistration._id}</p>
+                                    <p className="text-xs text-gray-500 font-mono tracking-tight mt-0.5">ID: {selectedRegistration._id}</p>
                                 </div>
                                 <button
                                     onClick={() => setSelectedRegistration(null)}
@@ -1210,15 +1210,30 @@ const AdminDashboard = () => {
 
                             <div className="p-6 space-y-6">
                                 {/* Yatra Info */}
-                                <div className="bg-teal-50 rounded-xl p-4 border border-teal-100">
-                                    <h3 className="font-semibold text-teal-900 mb-2 flex items-center gap-2">
+                                <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-5 border border-teal-100 shadow-sm">
+                                    <h3 className="font-bold text-teal-900 mb-2 flex items-center gap-2 text-sm uppercase tracking-wider">
                                         <MapPin className="w-4 h-4" />
-                                        Yatra Information
+                                        Yatra Selected
                                     </h3>
-                                    <p className="text-lg font-bold text-gray-800">{selectedRegistration.yatraTitle}</p>
-                                    <p className="text-sm text-gray-600">
-                                        Registered on: {new Date(selectedRegistration.createdAt).toLocaleString()}
-                                    </p>
+                                    <p className="text-xl font-black text-gray-900 leading-tight">{selectedRegistration.yatraTitle}</p>
+                                    <div className="mt-3 space-y-1">
+                                        {selectedRegistration.yatraId?.date && (
+                                            <p className="text-xs text-teal-700 font-medium flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                {selectedRegistration.yatraId.date}
+                                            </p>
+                                        )}
+                                        {selectedRegistration.yatraId?.locations && (
+                                            <p className="text-xs text-teal-700 font-medium flex items-center gap-1.5">
+                                                <MapPin className="w-3.5 h-3.5" />
+                                                {selectedRegistration.yatraId.locations}
+                                            </p>
+                                        )}
+                                        <p className="text-[10px] text-teal-600 pt-1 mt-2 border-t border-teal-200/50 flex items-center gap-1.5 opacity-70">
+                                            <Clock className="w-3 h-3" />
+                                            Registered on: {new Date(selectedRegistration.createdAt).toLocaleString()}
+                                        </p>
+                                    </div>
                                 </div>
 
                                 {/* Primary Contact */}
@@ -1269,13 +1284,14 @@ const AdminDashboard = () => {
                                                 </p>
                                             </div>
 
-                                            <div className="flex justify-end mt-2">
-                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${selectedRegistration.paymentStatus === 'verified' ? 'bg-green-200 text-green-800' :
-                                                    selectedRegistration.paymentStatus === 'uploaded' ? 'bg-blue-200 text-blue-800' :
-                                                        selectedRegistration.paymentStatus === 'failed' ? 'bg-red-200 text-red-800' :
-                                                            'bg-yellow-200 text-yellow-800'
+                                            <div className="flex justify-between items-center bg-white/40 p-2 rounded-lg mt-2 border border-emerald-100/50">
+                                                <span className="text-xs font-bold text-emerald-800 uppercase tracking-widest">Verification Status</span>
+                                                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter shadow-sm border ${selectedRegistration.paymentStatus === 'verified' ? 'bg-green-500 text-white border-green-600' :
+                                                    selectedRegistration.paymentStatus === 'uploaded' ? 'bg-blue-500 text-white border-blue-600' :
+                                                        selectedRegistration.paymentStatus === 'failed' ? 'bg-red-500 text-white border-red-600' :
+                                                            'bg-amber-500 text-white border-amber-600'
                                                     }`}>
-                                                    Status: {selectedRegistration.paymentStatus || 'Pending'}
+                                                    {selectedRegistration.paymentStatus || 'Pending'}
                                                 </span>
                                             </div>
                                         </div>
@@ -1305,11 +1321,18 @@ const AdminDashboard = () => {
                                 </div>
 
                                 {/* Members */}
-                                <div>
-                                    <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                        <Users className="w-4 h-4 text-blue-500" />
-                                        Members ({selectedRegistration.members?.length || 0})
-                                    </h3>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                            <Users className="w-5 h-5 text-blue-500" />
+                                            Traveling Members ({selectedRegistration.members?.length || 0})
+                                        </h3>
+                                        {selectedRegistration.sameRoomPreference && (
+                                            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold border border-blue-100 uppercase tracking-wider">
+                                                Preference: All in same room
+                                            </span>
+                                        )}
+                                    </div>
                                     <div className="space-y-3">
                                         {selectedRegistration.members?.map((member, idx) => (
                                             <div key={idx} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
@@ -1339,34 +1362,31 @@ const AdminDashboard = () => {
                                                             href={member.aadhaarCard.replace(/^http:\/\//i, 'https://')}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            download={member.aadhaarCard.toLowerCase().endsWith('.pdf') ? "aadhaar.pdf" : "aadhaar.jpg"}
-                                                            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg transition-colors self-start whitespace-nowrap"
+                                                            className="flex items-center gap-3 p-2 bg-gray-50 hover:bg-white border border-gray-200 rounded-xl transition-all group/doc"
                                                         >
-                                                            <div className="w-8 h-8 rounded bg-blue-200/50 flex items-center justify-center">
+                                                            <div className="w-10 h-10 rounded-lg bg-white border border-gray-100 flex items-center justify-center shadow-sm group-hover/doc:border-blue-200 group-hover/doc:text-blue-600">
                                                                 {member.aadhaarCard.toLowerCase().endsWith('.pdf') ? (
-                                                                    <Book className="w-4 h-4" />
+                                                                    <Book className="w-5 h-5 text-gray-400 group-hover/doc:text-red-500" />
                                                                 ) : (
-                                                                    <div className="w-full h-full overflow-hidden rounded">
-                                                                        <img src={member.aadhaarCard.replace(/^http:\/\//i, 'https://')} className="w-full h-full object-cover" alt="prev" />
-                                                                    </div>
+                                                                    <Eye className="w-5 h-5 text-gray-400 group-hover/doc:text-blue-500" />
                                                                 )}
                                                             </div>
-                                                            {member.aadhaarCard.toLowerCase().endsWith('.pdf') ? 'View PDF' : 'View Image'}
+                                                            <div className="pr-2">
+                                                                <p className="text-[10px] uppercase font-bold text-gray-400 leading-none mb-1">Aadhaar Card</p>
+                                                                <p className="text-xs font-bold text-gray-700 group-hover/doc:text-blue-600">
+                                                                    {member.aadhaarCard.toLowerCase().endsWith('.pdf') ? 'View PDF' : 'View Image'}
+                                                                </p>
+                                                            </div>
                                                         </a>
                                                     )}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                    {selectedRegistration.sameRoomPreference && (
-                                        <div className="mt-3 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm inline-flex items-center gap-2">
-                                            <Users className="w-4 h-4" />
-                                            Preference: All members in same room
-                                        </div>
-                                    )}
                                     {selectedRegistration.accommodationNotes && (
-                                        <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                            <span className="font-medium text-gray-800">Accommodation Notes:</span> {selectedRegistration.accommodationNotes}
+                                        <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100 flex items-start gap-2">
+                                            <span className="bg-orange-100 p-1 rounded text-orange-600 font-bold text-[10px] uppercase">Notes</span>
+                                            <p><span className="font-medium text-gray-800">Accommodation:</span> {selectedRegistration.accommodationNotes}</p>
                                         </div>
                                     )}
                                 </div>
@@ -1395,125 +1415,148 @@ const AdminDashboard = () => {
                                 )}
 
                                 {/* Selected Trains */}
-                                {selectedRegistration.selectedTrains && selectedRegistration.selectedTrains.length > 0 && (
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                            <span className="text-lg">🚂</span>
-                                            Selected Trains ({selectedRegistration.selectedTrains.length})
-                                        </h3>
-                                        <div className="space-y-3">
-                                            {selectedRegistration.selectedTrains.map((train, idx) => (
-                                                <div key={idx} className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-4 shadow-sm">
-                                                    <div className="flex items-start justify-between gap-3">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="font-bold text-indigo-900 text-base">{train.trainName}</span>
-                                                                {train.trainNumber && (
-                                                                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-                                                                        #{train.trainNumber}
-                                                                    </span>
-                                                                )}
+                                {((selectedRegistration.selectedTrains && selectedRegistration.selectedTrains.length > 0) ||
+                                    selectedRegistration.selectedTrain) && (
+                                        <div className="space-y-4">
+                                            <h4 className="font-semibold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                                <span className="text-lg">🚂</span>
+                                                Train Journey Details
+                                            </h4>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {/* Handle Multiple Trains */}
+                                                {selectedRegistration.selectedTrains?.map((train, idx) => (
+                                                    <div key={`train-multi-${idx}`} className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-5 shadow-sm">
+                                                        <div className="flex flex-col sm:flex-row justify-between gap-4">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-3 mb-2">
+                                                                    <span className="font-bold text-indigo-900 text-lg">{train.trainName}</span>
+                                                                    {train.trainNumber && (
+                                                                        <span className="text-[10px] bg-white text-indigo-700 px-2 py-0.5 rounded-full font-bold border border-indigo-100 shadow-sm">
+                                                                            #{train.trainNumber}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-sm text-gray-600 space-y-2 mt-2">
+                                                                    {train.classCategory && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Class</span>
+                                                                            <span className="font-bold bg-white px-2 py-0.5 rounded border border-indigo-100 text-indigo-800 text-xs shadow-sm">{train.classCategory}</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {(train.boardingStation || train.alightingStation) && (
+                                                                        <div className="flex items-center gap-2 flex-wrap bg-white/40 p-2 rounded-xl border border-indigo-50">
+                                                                            {train.boardingStation && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <span className="text-indigo-400 text-[10px] font-bold uppercase mr-1">From</span>
+                                                                                    <span className="font-bold text-indigo-900 text-xs">{train.boardingStation}</span>
+                                                                                </span>
+                                                                            )}
+                                                                            {train.boardingStation && train.alightingStation && (
+                                                                                <span className="text-indigo-300">→</span>
+                                                                            )}
+                                                                            {train.alightingStation && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <span className="text-indigo-400 text-[10px] font-bold uppercase mr-1 ml-1">To</span>
+                                                                                    <span className="font-bold text-indigo-900 text-xs">{train.alightingStation}</span>
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                            <div className="text-sm text-gray-600 space-y-1 mt-2">
-                                                                {train.classCategory && (
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-gray-500">Class:</span>
-                                                                        <span className="font-medium bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-800">{train.classCategory}</span>
-                                                                    </div>
-                                                                )}
-                                                                {(train.boardingStation || train.alightingStation) && (
-                                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                                        {train.boardingStation && (
-                                                                            <span className="flex items-center gap-1">
-                                                                                <span className="text-green-600 text-xs">▲</span>
-                                                                                <span className="text-gray-500">From:</span>
-                                                                                <span className="font-medium text-gray-800">{train.boardingStation}</span>
-                                                                            </span>
-                                                                        )}
-                                                                        {train.boardingStation && train.alightingStation && (
-                                                                            <span className="text-gray-400">→</span>
-                                                                        )}
-                                                                        {train.alightingStation && (
-                                                                            <span className="flex items-center gap-1">
-                                                                                <span className="text-red-600 text-xs">▼</span>
-                                                                                <span className="text-gray-500">To:</span>
-                                                                                <span className="font-medium text-gray-800">{train.alightingStation}</span>
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                )}
+                                                            {train.price > 0 && (
+                                                                <div className="text-right flex-shrink-0 bg-white/60 p-3 rounded-xl border border-white">
+                                                                    <p className="text-[10px] text-gray-400 font-bold uppercase">Price</p>
+                                                                    <p className="text-xl font-black text-indigo-700">₹{train.price.toLocaleString()}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+
+                                                {/* Legacy Single Train Fallback */}
+                                                {(!selectedRegistration.selectedTrains || selectedRegistration.selectedTrains.length === 0) && selectedRegistration.selectedTrain && (
+                                                    <div className="bg-gradient-to-r from-indigo-50/50 to-blue-50/50 border border-dashed border-indigo-200 rounded-2xl p-5 shadow-sm">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <p className="text-lg font-bold text-indigo-900">{selectedRegistration.selectedTrain.trainName}</p>
+                                                                <p className="text-xs text-gray-500 font-medium">{selectedRegistration.selectedTrain.classCategory} • #{selectedRegistration.selectedTrain.trainNumber}</p>
+                                                            </div>
+                                                            {selectedRegistration.selectedTrain.price && (
+                                                                <p className="text-lg font-black text-indigo-700">₹{selectedRegistration.selectedTrain.price.toLocaleString()}</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                {/* Packages Section */}
+                                {((selectedRegistration.selectedPackages && selectedRegistration.selectedPackages.length > 0) ||
+                                    selectedRegistration.selectedPackage) && (
+                                        <div className="space-y-4">
+                                            <h4 className="font-semibold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider">
+                                                <Book className="w-4 h-4 text-purple-600" />
+                                                Selected Packages
+                                            </h4>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {/* Handle Plural Packages */}
+                                                {selectedRegistration.selectedPackages?.map((pkg, idx) => (
+                                                    <div key={`pkg-multi-${idx}`} className="bg-white border border-purple-100 rounded-2xl p-5 shadow-sm overflow-hidden relative">
+                                                        <div className="absolute left-0 top-0 w-1 h-full bg-purple-500" />
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <p className="font-bold text-gray-900 text-lg">{pkg.packageName}</p>
+                                                                {pkg.description && <p className="text-xs text-gray-500 mt-1">{pkg.description}</p>}
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-sm font-bold text-purple-700">₹{(pkg.totalCost || pkg.pricePerPerson || 0).toLocaleString()}</p>
+                                                                {pkg.pricingType && <p className="text-[10px] uppercase font-bold text-gray-400">{pkg.pricingType}</p>}
                                                             </div>
                                                         </div>
-                                                        {train.price > 0 && (
-                                                            <div className="text-right flex-shrink-0">
-                                                                <p className="text-xs text-gray-500 uppercase">Price</p>
-                                                                <p className="text-lg font-bold text-indigo-700">₹{train.price.toLocaleString()}</p>
+
+                                                        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium text-purple-700/80 mb-3 border-t border-purple-50 pt-2 mt-2">
+                                                            {pkg.pricePerPerson && <span>Rate: ₹{pkg.pricePerPerson}</span>}
+                                                            {pkg.days && <span>Duration: {pkg.days} Days</span>}
+                                                        </div>
+
+                                                        {pkg.guestDetails && (pkg.guestDetails.name || pkg.guestDetails.age || pkg.guestDetails.phone) && (
+                                                            <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 mt-2">
+                                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">Occupant Assignment</p>
+                                                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                                                    {pkg.guestDetails.name && <p className="text-gray-700"><span className="opacity-60">Name:</span> <span className="font-bold">{pkg.guestDetails.name}</span></p>}
+                                                                    {pkg.guestDetails.age && <p className="text-gray-700"><span className="opacity-60">Age:</span> <span className="font-bold">{pkg.guestDetails.age}</span></p>}
+                                                                    {pkg.guestDetails.phone && <p className="text-gray-700 col-span-2"><span className="opacity-60">Phone:</span> <span className="font-bold">{pkg.guestDetails.phone}</span></p>}
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                                                ))}
 
-                                {/* Travel & Package (Legacy single train fallback) */}
-                                {(selectedRegistration.selectedTrain || selectedRegistration.selectedPackage) && (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {selectedRegistration.selectedTrain && (
-                                            <div className="border border-gray-100 rounded-xl p-4">
-                                                <h3 className="font-semibold text-gray-900 mb-2">Train Preference</h3>
-                                                <div className="text-sm text-gray-600">
-                                                    <p><span className="font-medium">Train:</span> {selectedRegistration.selectedTrain.trainName}</p>
-                                                    <p><span className="font-medium">Number:</span> {selectedRegistration.selectedTrain.trainNumber}</p>
-                                                    <p><span className="font-medium">Class:</span> {selectedRegistration.selectedTrain.classCategory}</p>
-                                                    {selectedRegistration.selectedTrain.price && (
-                                                        <p><span className="font-medium">Price:</span> ₹{selectedRegistration.selectedTrain.price}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                        {/* Multi-select Packages Display */}
-                                        {(selectedRegistration.selectedPackages && selectedRegistration.selectedPackages.length > 0) ? (
-                                            <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/50">
-                                                <h3 className="font-semibold text-gray-900 mb-3">Packages Selected</h3>
-                                                <div className="space-y-3">
-                                                    {selectedRegistration.selectedPackages.map((pkg, idx) => (
-                                                        <div key={idx} className="bg-white p-3 rounded-lg border border-gray-200">
-                                                            <p className="font-medium text-purple-700">{pkg.packageName}</p>
-                                                            {pkg.description && <p className="text-xs text-gray-500 mb-1">{pkg.description}</p>}
-                                                            <div className="text-sm text-gray-600 grid grid-cols-2 gap-2 mt-2">
-                                                                {pkg.pricingType && <p>Type: <span className="font-medium">{pkg.pricingType}</span></p>}
-                                                                {(pkg.pricePerPerson || pkg.cost) && (
-                                                                    <p>Price/Person: <span className="font-medium">₹{pkg.pricePerPerson || pkg.cost}</span></p>
+                                                {/* Handle Legacy/Fallthrough Singular Package */}
+                                                {(!selectedRegistration.selectedPackages || selectedRegistration.selectedPackages.length === 0) && selectedRegistration.selectedPackage && (
+                                                    <div className="bg-white border border-purple-100 rounded-2xl p-5 shadow-sm overflow-hidden relative">
+                                                        <div className="absolute left-0 top-0 w-1 h-full bg-purple-500" />
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="font-bold text-gray-900 text-lg">{selectedRegistration.selectedPackage.packageName}</p>
+                                                                {selectedRegistration.selectedPackage.pricingType && (
+                                                                    <p className="text-xs text-gray-500 mt-1 uppercase tracking-tight font-medium">Type: {selectedRegistration.selectedPackage.pricingType}</p>
                                                                 )}
-                                                                {pkg.totalCost && (
-                                                                    <p className="col-span-2 font-bold text-gray-800">Total: ₹{pkg.totalCost}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-lg font-black text-purple-700">₹{(selectedRegistration.selectedPackage.totalCost || 0).toLocaleString()}</p>
+                                                                {selectedRegistration.selectedPackage.pricePerPerson && (
+                                                                    <p className="text-[10px] font-bold text-gray-400">₹{selectedRegistration.selectedPackage.pricePerPerson} / Person</p>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        ) : selectedRegistration.selectedPackage && (
-                                            <div className="border border-gray-100 rounded-xl p-4">
-                                                <h3 className="font-semibold text-gray-900 mb-2">Package Selected</h3>
-                                                <div className="text-sm text-gray-600">
-                                                    <p className="font-medium text-purple-700">{selectedRegistration.selectedPackage.packageName}</p>
-                                                    {selectedRegistration.selectedPackage.pricingType && (
-                                                        <p>Type: {selectedRegistration.selectedPackage.pricingType}</p>
-                                                    )}
-                                                    {selectedRegistration.selectedPackage.pricePerPerson && (
-                                                        <p className="mt-1">Price per person: ₹{selectedRegistration.selectedPackage.pricePerPerson}</p>
-                                                    )}
-                                                    {selectedRegistration.selectedPackage.totalCost && (
-                                                        <p className="mt-1 font-bold">Total Cost: ₹{selectedRegistration.selectedPackage.totalCost}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
 
                                 {/* Suggestions */}
                                 {selectedRegistration.suggestions && (
