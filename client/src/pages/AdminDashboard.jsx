@@ -252,6 +252,24 @@ const AdminDashboard = () => {
         return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
     };
 
+    // Helper to fix old image URLs (Handle Windows paths and base URL)
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return '';
+        if (imagePath.startsWith('http')) return imagePath.replace(/^http:\/\//i, 'https://');
+
+        // Normalize backslashes (Windows) to forward slashes (Web)
+        const normalizedPath = imagePath.replace(/\\/g, '/');
+
+        // Ensure path starts with a slash
+        const relativePath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+
+        // The API string usually ends with '/api' (e.g. https://domain.com/api). We want the base url for uploads.
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api';
+        const baseUrl = apiUrl.replace(/\/api\/?$/, '');
+
+        return `${baseUrl}${relativePath}`;
+    };
+
     const handleInputChange = (e) => {
         setFormData({
             ...formData,
@@ -614,11 +632,7 @@ const AdminDashboard = () => {
                                                         </span>
                                                         {reg.paymentScreenshot && (
                                                             <a
-                                                                href={
-                                                                    reg.paymentScreenshot.startsWith('http')
-                                                                        ? reg.paymentScreenshot.replace(/^http:\/\//i, 'https://')
-                                                                        : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${reg.paymentScreenshot}`
-                                                                }
+                                                                href={getImageUrl(reg.paymentScreenshot)}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="block text-xs text-teal-600 hover:underline mt-1"
@@ -1303,21 +1317,13 @@ const AdminDashboard = () => {
                                             <div>
                                                 <p className="text-xs text-emerald-700 mb-2 font-semibold">Payment Screenshot:</p>
                                                 <a
-                                                    href={
-                                                        selectedRegistration.paymentScreenshot.startsWith('http')
-                                                            ? selectedRegistration.paymentScreenshot.replace(/^http:\/\//i, 'https://')
-                                                            : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${selectedRegistration.paymentScreenshot}`
-                                                    }
+                                                    href={getImageUrl(selectedRegistration.paymentScreenshot)}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="block relative group overflow-hidden rounded-lg border border-emerald-200"
                                                 >
                                                     <img
-                                                        src={
-                                                            selectedRegistration.paymentScreenshot.startsWith('http')
-                                                                ? selectedRegistration.paymentScreenshot.replace(/^http:\/\//i, 'https://')
-                                                                : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${selectedRegistration.paymentScreenshot}`
-                                                        }
+                                                        src={getImageUrl(selectedRegistration.paymentScreenshot)}
                                                         alt="Payment Screenshot"
                                                         className="w-full h-48 object-cover transition-transform group-hover:scale-105"
                                                     />
@@ -1371,11 +1377,7 @@ const AdminDashboard = () => {
                                                     </div>
                                                     {member.aadhaarCard && (
                                                         <a
-                                                            href={
-                                                                member.aadhaarCard.startsWith('http')
-                                                                    ? member.aadhaarCard.replace(/^http:\/\//i, 'https://')
-                                                                    : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${member.aadhaarCard}`
-                                                            }
+                                                            href={getImageUrl(member.aadhaarCard)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="flex items-center gap-3 p-2 bg-gray-50 hover:bg-white border border-gray-200 rounded-xl transition-all group/doc"
