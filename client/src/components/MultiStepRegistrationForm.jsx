@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import imageCompression from 'browser-image-compression';
 import {
     FaTimes, FaCheckCircle, FaChevronLeft, FaChevronRight, FaChevronDown,
     FaUser, FaUsers, FaIdCard, FaBed, FaTrain, FaCreditCard,
@@ -277,8 +278,24 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
         setMembers(updated);
     };
 
-    const handleAadhaarUpload = (index, file) => {
-        updateMember(index, 'aadhaarFile', file);
+    const handleAadhaarUpload = async (index, file) => {
+        if (!file) return;
+        try {
+            if (file.type.startsWith('image/')) {
+                const options = {
+                    maxSizeMB: 0.8,
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true
+                };
+                const compressedFile = await imageCompression(file, options);
+                updateMember(index, 'aadhaarFile', compressedFile);
+            } else {
+                updateMember(index, 'aadhaarFile', file);
+            }
+        } catch (error) {
+            console.error('Error compressing image:', error);
+            updateMember(index, 'aadhaarFile', file); // Fallback
+        }
     };
 
     // Validation
@@ -1324,7 +1341,26 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                     type="file"
                                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                     accept="image/*"
-                                    onChange={(e) => setPaymentScreenshot(e.target.files[0])}
+                                    onChange={async (e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        try {
+                                            if (file.type.startsWith('image/')) {
+                                                const options = {
+                                                    maxSizeMB: 0.8,
+                                                    maxWidthOrHeight: 1920,
+                                                    useWebWorker: true
+                                                };
+                                                const compressedFile = await imageCompression(file, options);
+                                                setPaymentScreenshot(compressedFile);
+                                            } else {
+                                                setPaymentScreenshot(file);
+                                            }
+                                        } catch (error) {
+                                            console.error('Error compressing image:', error);
+                                            setPaymentScreenshot(file); // Fallback
+                                        }
+                                    }}
                                 />
                                 <div className="flex flex-col items-center justify-center pointer-events-none">
                                     {paymentScreenshot ? (
