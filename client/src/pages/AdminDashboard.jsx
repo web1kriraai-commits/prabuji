@@ -614,7 +614,11 @@ const AdminDashboard = () => {
                                                         </span>
                                                         {reg.paymentScreenshot && (
                                                             <a
-                                                                href={reg.paymentScreenshot}
+                                                                href={
+                                                                    reg.paymentScreenshot.startsWith('http')
+                                                                        ? reg.paymentScreenshot.replace(/^http:\/\//i, 'https://')
+                                                                        : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${reg.paymentScreenshot}`
+                                                                }
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="block text-xs text-teal-600 hover:underline mt-1"
@@ -1299,13 +1303,21 @@ const AdminDashboard = () => {
                                             <div>
                                                 <p className="text-xs text-emerald-700 mb-2 font-semibold">Payment Screenshot:</p>
                                                 <a
-                                                    href={selectedRegistration.paymentScreenshot}
+                                                    href={
+                                                        selectedRegistration.paymentScreenshot.startsWith('http')
+                                                            ? selectedRegistration.paymentScreenshot.replace(/^http:\/\//i, 'https://')
+                                                            : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${selectedRegistration.paymentScreenshot}`
+                                                    }
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="block relative group overflow-hidden rounded-lg border border-emerald-200"
                                                 >
                                                     <img
-                                                        src={selectedRegistration.paymentScreenshot}
+                                                        src={
+                                                            selectedRegistration.paymentScreenshot.startsWith('http')
+                                                                ? selectedRegistration.paymentScreenshot.replace(/^http:\/\//i, 'https://')
+                                                                : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${selectedRegistration.paymentScreenshot}`
+                                                        }
                                                         alt="Payment Screenshot"
                                                         className="w-full h-48 object-cover transition-transform group-hover:scale-105"
                                                     />
@@ -1359,7 +1371,11 @@ const AdminDashboard = () => {
                                                     </div>
                                                     {member.aadhaarCard && (
                                                         <a
-                                                            href={member.aadhaarCard.replace(/^http:\/\//i, 'https://')}
+                                                            href={
+                                                                member.aadhaarCard.startsWith('http')
+                                                                    ? member.aadhaarCard.replace(/^http:\/\//i, 'https://')
+                                                                    : `${import.meta.env.VITE_API_URL || 'https://gaurangasgroup.com/api'}/${member.aadhaarCard}`
+                                                            }
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="flex items-center gap-3 p-2 bg-gray-50 hover:bg-white border border-gray-200 rounded-xl transition-all group/doc"

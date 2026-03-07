@@ -1,4 +1,31 @@
 const YatraRegistration = require('../models/YatraRegistration');
+const cloudinary = require('../config/cloudinary');
+
+// @desc    Get Cloudinary Signature for direct client uploads
+// @route   GET /api/yatra-registration/cloudinary-signature
+// @access  Public
+exports.getCloudinarySignature = (req, res) => {
+    try {
+        const timestamp = Math.round((new Date).getTime() / 1000);
+        const folder = 'yatra-registrations';
+
+        const signature = cloudinary.utils.api_sign_request({
+            timestamp: timestamp,
+            folder: folder
+        }, process.env.CLOUDINARY_API_SECRET);
+
+        res.json({
+            signature,
+            timestamp,
+            folder,
+            cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+            apiKey: process.env.CLOUDINARY_API_KEY
+        });
+    } catch (err) {
+        console.error('Error generating signature:', err);
+        res.status(500).json({ msg: 'Server Error', error: err.message });
+    }
+};
 
 // @desc    Create a new Yatra Registration
 // @route   POST /api/yatra-registration
@@ -61,16 +88,31 @@ exports.createRegistration = async (req, res) => {
         }
 
         // Handle file uploads - payment screenshot
-        let paymentScreenshotUrl = null;
+        let paymentScreenshotUrl = req.body.paymentScreenshotUrl || null;
         if (req.files && req.files.paymentScreenshot) {
             paymentScreenshotUrl = req.files.paymentScreenshot[0].path;
         }
 
-        // Handle aadhaar uploads
+        // Handle aadhaar uploads (either an array of URL strings from frontend or server parsed form-data files)
+        let aadhaarCardUrls = [];
+        if (req.body.aadhaarCardUrls) {
+            try {
+                aadhaarCardUrls = JSON.parse(req.body.aadhaarCardUrls);
+            } catch (e) {
+                console.error("Failed to parse aadhaar forms", e);
+            }
+        }
+
         if (req.files && req.files.aadhaarCards && parsedMembers) {
             req.files.aadhaarCards.forEach((file, index) => {
                 if (parsedMembers[index]) {
                     parsedMembers[index].aadhaarCard = file.path;
+                }
+            });
+        } else if (aadhaarCardUrls.length > 0 && parsedMembers) {
+            aadhaarCardUrls.forEach((url, index) => {
+                if (parsedMembers[index]) {
+                    parsedMembers[index].aadhaarCard = url;
                 }
             });
         }

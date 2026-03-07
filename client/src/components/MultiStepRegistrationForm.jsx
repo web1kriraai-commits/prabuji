@@ -283,8 +283,8 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
         try {
             if (file.type.startsWith('image/')) {
                 const options = {
-                    maxSizeMB: 0.8,
-                    maxWidthOrHeight: 1920,
+                    maxSizeMB: 5, // Increased from 0.1MB to 5MB for high clarity
+                    maxWidthOrHeight: 2500, // Increased resolution significantly
                     useWebWorker: true
                 };
                 const compressedFile = await imageCompression(file, options);
@@ -410,12 +410,55 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
         }
     };
 
+    // Helper to upload a file directly to Cloudinary
+    const uploadToCloudinary = async (file, signatureData) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', signatureData.apiKey);
+        formData.append('timestamp', signatureData.timestamp);
+        formData.append('signature', signatureData.signature);
+        formData.append('folder', signatureData.folder);
+
+        const response = await fetch(`https://api.cloudinary.com/v1_1/${signatureData.cloudName}/auto/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error?.message || 'Failed to upload image to Cloudinary');
+        }
+        return data.secure_url;
+    };
+
     // Submit form
     const handleSubmit = async () => {
         setSubmitting(true);
         setSubmitError('');
 
         try {
+            // 1. Fetch Cloudinary Signature
+            const sigRes = await api.get('/yatra-registration/cloudinary-signature');
+            const signatureData = sigRes.data;
+
+            // 2. Upload Payment Screenshot Directly to Cloudinary
+            let uploadedPaymentUrl = '';
+            if (paymentScreenshot) {
+                uploadedPaymentUrl = await uploadToCloudinary(paymentScreenshot, signatureData);
+            }
+
+            // 3. Upload Aadhaar Documents Directly to Cloudinary
+            const aadhaarUrls = [];
+            for (let i = 0; i < members.length; i++) {
+                if (members[i].aadhaarFile) {
+                    const url = await uploadToCloudinary(members[i].aadhaarFile, signatureData);
+                    aadhaarUrls.push(url);
+                } else {
+                    aadhaarUrls.push(''); // keeps indexes aligned
+                }
+            }
+
+            // 4. Send the rest of the data mapping URLs instead of passing massive files
             const formData = new FormData();
             formData.append('yatraId', yatra._id);
             formData.append('yatraTitle', yatra.title);
@@ -485,21 +528,16 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
 
             formData.append('suggestions', suggestions);
 
-            // Upload files
-            if (paymentScreenshot) {
-                formData.append('paymentScreenshot', paymentScreenshot);
+            // Add directly uploaded Cloudinary URLs
+            if (uploadedPaymentUrl) {
+                formData.append('paymentScreenshotUrl', uploadedPaymentUrl);
+            }
+            if (aadhaarUrls.length > 0) {
+                formData.append('aadhaarCardUrls', JSON.stringify(aadhaarUrls));
             }
 
-            // Append Aadhaar files individually with same field name to create array on server
-            members.forEach((member) => {
-                if (member.aadhaarFile) {
-                    formData.append('aadhaarCards', member.aadhaarFile);
-                }
-            });
-
-            await api.post('/yatra-registration', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // Because we upload directly, we don't need multipart configuration!
+            await api.post('/yatra-registration', formData);
 
             setSubmitSuccess(true);
             localStorage.removeItem(`yatra_registration_${yatra._id}`);
@@ -1347,8 +1385,8 @@ const MultiStepRegistrationForm = ({ yatra, onClose }) => {
                                         try {
                                             if (file.type.startsWith('image/')) {
                                                 const options = {
-                                                    maxSizeMB: 0.8,
-                                                    maxWidthOrHeight: 1920,
+                                                    maxSizeMB: 5, // Increased from 0.1MB to 5MB for high clarity
+                                                    maxWidthOrHeight: 2500,
                                                     useWebWorker: true
                                                 };
                                                 const compressedFile = await imageCompression(file, options);

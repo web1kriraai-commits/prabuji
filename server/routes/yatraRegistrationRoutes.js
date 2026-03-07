@@ -5,12 +5,16 @@ const { isAdmin } = require('../middleware/roleCheck');
 const uploadRegistration = require('../middleware/uploadRegistration');
 const {
     createRegistration,
+    getCloudinarySignature,
     getAllRegistrations,
     getRegistrationsByYatra,
     getRegistrationById,
     updateRegistration,
     deleteRegistration
 } = require('../controllers/yatraRegistrationController');
+
+// Public route to get cloudinary signature for direct upload
+router.get('/cloudinary-signature', getCloudinarySignature);
 
 // Public route - anyone can register (with file uploads)
 router.post('/', uploadRegistration.fields([
