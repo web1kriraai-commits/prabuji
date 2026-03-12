@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import SeoHead from '../components/SeoHead';
 
 const MainLayout = () => {
     const location = useLocation();
@@ -32,6 +33,7 @@ const MainLayout = () => {
 
     return (
         <div className="main-layout">
+            <SeoHead />
             <Navbar />
             <main className="main-content">
                 <Outlet />

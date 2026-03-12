@@ -3,8 +3,23 @@ import { motion } from 'framer-motion';
 import childrenClassImg from '../assets/image/children-class.jpeg';
 import bagavatgitaImg from '../assets/image/bagavatgita.png';
 import childImg from '../assets/image/child.png';
+import useSeoConfig from '../hooks/useSeoConfig';
 
 const GaurangaVidhyapitha = () => {
+    const { seoData, loading } = useSeoConfig();
+
+    const getVal = (dynamic, defaultV) => (dynamic && dynamic.trim() !== '' ? dynamic : defaultV);
+
+    const fallbacks = {
+        h1: 'Gauranga Vidhyapitha',
+        htmlContent: `<p>Gauranga Vidyapitha is the educational initiative of Gaurangas Group dedicated to teaching Krishna consciousness to children, youth, and families in an engaging and systematic way.</p><p>Inspired by the timeless teachings of Bhagavad Gita, Srimad Bhagavatam, and Srila Prabhupada, this platform serves as a divine school to nurture character, values, and spiritual knowledge.</p>`,
+        courses: [
+            { title: 'Weekly Bhagwadgeeta Class', description: 'Every Sunday 5 pm we organize weekly live Bhagavad Gita Class.', buttonText: 'Book Your Seat', img: bagavatgitaImg },
+            { title: 'Children Courses', description: 'Fun-filled Krishna conscious learning through stories, art, drama, and bhajans for ages 5–15.', buttonText: 'Register Courses', img: childrenClassImg },
+            { title: 'Youth Training', description: 'Practical application of Gita, self-discipline, seva spirit, and balanced lifestyle guidance.', buttonText: 'Register Now', img: childImg }
+        ]
+    };
+
     return (
         <div className="gauranga-vidhyapitha-page" style={{
             minHeight: '100vh',
@@ -29,28 +44,21 @@ const GaurangaVidhyapitha = () => {
                         color: '#022B3A',
                         marginBottom: '1rem'
                     }}>
-                        Gauranga Vidhyapitha
+                        {getVal(seoData?.headings?.h1, fallbacks.h1)}
                     </h1>
-                    <p style={{
-                        fontSize: '1.2rem',
-                        maxWidth: '800px',
-                        margin: '0 auto 3rem',
-                        color: '#022B3A',
-                        opacity: 0.8,
-                        lineHeight: 1.6
-                    }}>
-                        Gauranga Vidyapitha is the educational initiative of Gaurangas Group dedicated to teaching Krishna consciousness to children, youth, and families in an engaging and systematic way.
-                    </p>
-                    <p style={{
-                        fontSize: '1rem',
-                        maxWidth: '800px',
-                        margin: '0 auto 4rem',
-                        color: '#022B3A',
-                        opacity: 0.7,
-                        lineHeight: 1.6
-                    }}>
-                        Inspired by the timeless teachings of Bhagavad Gita, Srimad Bhagavatam, and Srila Prabhupada, this platform serves as a divine school to nurture character, values, and spiritual knowledge.
-                    </p>
+                    
+                    {/* Render split paragraphs via HTML Content */}
+                    <div 
+                        style={{
+                            fontSize: '1.2rem',
+                            maxWidth: '800px',
+                            margin: '0 auto 4rem',
+                            color: '#022B3A',
+                            opacity: 0.8,
+                            lineHeight: 1.6
+                        }}
+                        dangerouslySetInnerHTML={{ __html: getVal(seoData?.htmlContent, fallbacks.htmlContent) }}
+                    />
                 </motion.div>
             </div>
 
@@ -67,30 +75,33 @@ const GaurangaVidhyapitha = () => {
                 }}>
                     {/* Weekly Bhagwadgeeta Class */}
                     <CourseCard
-                        title="Weekly Bhagwadgeeta Class"
-                        image={bagavatgitaImg}
+                        title={getVal(seoData?.headings?.h2, fallbacks.courses[0].title)}
+                        image={getVal(seoData?.images?.[0]?.url, fallbacks.courses[0].img)}
                         delay={0.2}
-                        description="Every Sunday 5 pm we organize weekly live Bhagavad Gita Class."
-                        buttonText="Book Your Seat"
+                        description={getVal(seoData?.images?.[0]?.caption, fallbacks.courses[0].description)}
+                        buttonText={getVal(seoData?.internalLinks?.[0]?.anchorText, fallbacks.courses[0].buttonText)}
+                        targetUrl={getVal(seoData?.internalLinks?.[0]?.targetUrl, '')}
                     />
 
                     {/* Children Courses */}
                     <CourseCard
-                        title="Children Courses"
-                        image={childrenClassImg}
+                        title={getVal(seoData?.headings?.h3, fallbacks.courses[1].title)}
+                        image={getVal(seoData?.images?.[1]?.url, fallbacks.courses[1].img)}
                         delay={0.4}
                         inverse={true}
-                        description="Fun-filled Krishna conscious learning through stories, art, drama, and bhajans for ages 5–15."
-                        buttonText="Register Courses"
+                        description={getVal(seoData?.images?.[1]?.caption, fallbacks.courses[1].description)}
+                        buttonText={getVal(seoData?.internalLinks?.[1]?.anchorText, fallbacks.courses[1].buttonText)}
+                        targetUrl={getVal(seoData?.internalLinks?.[1]?.targetUrl, '')}
                     />
 
                     {/* Youth Training */}
                     <CourseCard
-                        title="Youth Training"
-                        image={childImg}
+                        title={getVal(seoData?.headings?.h4, fallbacks.courses[2].title)}
+                        image={getVal(seoData?.images?.[2]?.url, fallbacks.courses[2].img)}
                         delay={0.6}
-                        description="Practical application of Gita, self-discipline, seva spirit, and balanced lifestyle guidance."
-                        buttonText="Register Now"
+                        description={getVal(seoData?.images?.[2]?.caption, fallbacks.courses[2].description)}
+                        buttonText={getVal(seoData?.internalLinks?.[2]?.anchorText, fallbacks.courses[2].buttonText)}
+                        targetUrl={getVal(seoData?.internalLinks?.[2]?.targetUrl, '')}
                     />
                 </div>
             </div>
@@ -98,7 +109,7 @@ const GaurangaVidhyapitha = () => {
     );
 };
 
-const CourseCard = ({ title, image, description, delay, inverse, buttonText }) => {
+const CourseCard = ({ title, image, description, delay, inverse, buttonText, targetUrl }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -118,13 +129,13 @@ const CourseCard = ({ title, image, description, delay, inverse, buttonText }) =
         >
             {inverse ? (
                 <>
-                    <ContentSide title={title} description={description} buttonText={buttonText} />
+                    <ContentSide title={title} description={description} buttonText={buttonText} targetUrl={targetUrl} />
                     <ImageSide image={image} title={title} />
                 </>
             ) : (
                 <>
                     <ImageSide image={image} title={title} />
-                    <ContentSide title={title} description={description} buttonText={buttonText} />
+                    <ContentSide title={title} description={description} buttonText={buttonText} targetUrl={targetUrl} />
                 </>
             )}
         </motion.div>
@@ -151,8 +162,9 @@ const ImageSide = ({ image, title }) => (
     </div>
 );
 
-const ContentSide = ({ title, description, buttonText }) => {
+const ContentSide = ({ title, description, buttonText, targetUrl }) => {
     const whatsappLink = `https://wa.me/917600156255?text=${encodeURIComponent(`Hare Krishna, I would like to register for ${title}.`)}`;
+    const finalUrl = targetUrl && targetUrl.trim() !== '' ? targetUrl : whatsappLink;
 
     return (
         <div style={{
@@ -179,7 +191,7 @@ const ContentSide = ({ title, description, buttonText }) => {
                 maxWidth: '400px'
             }}>{description}</p>
             <a
-                href={whatsappLink}
+                href={finalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

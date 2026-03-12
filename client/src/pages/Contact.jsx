@@ -1,9 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import useSeoConfig from '../hooks/useSeoConfig';
 
 import ContactForm from '../components/ContactForm'; // Import the new component
 
 const Contact = () => {
+    const { seoData } = useSeoConfig();
+
     return (
         <div className="contact-page" style={{
             minHeight: '100vh',
@@ -29,8 +32,17 @@ const Contact = () => {
                         fontFamily: 'var(--font-accent, serif)'
                     }}
                 >
-                    Contact Us
+                    {seoData?.headings?.h1 || 'Contact Us'}
                 </motion.h1>
+
+                {seoData?.headings?.h2 && (
+                    <motion.h2
+                        style={{ fontSize: '1.5rem', color: '#1F7A8C', marginBottom: '1rem' }}
+                    >
+                        {seoData.headings.h2}
+                    </motion.h2>
+                )}
+
                 <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -43,8 +55,17 @@ const Contact = () => {
                         lineHeight: 1.6
                     }}
                 >
-                    Have questions? We'd love to hear from you. Reach out to us for any inquiries about our courses, yatras, or seva opportunities.
+                    {seoData?.metaDescription || "Have questions? We'd love to hear from you. Reach out to us for any inquiries about our courses, yatras, or seva opportunities."}
                 </motion.p>
+
+                {/* Dynamic HTML Content */}
+                {seoData?.htmlContent && (
+                    <div
+                        className="prose"
+                        style={{ marginTop: '2rem', maxWidth: '800px', margin: '2rem auto 0', textAlign: 'left' }}
+                        dangerouslySetInnerHTML={{ __html: seoData.htmlContent }}
+                    />
+                )}
             </div>
 
             <div className="container" style={{

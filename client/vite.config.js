@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     allowedHosts: ["nonprohibitory-katheryn-unbewitched.ngrok-free.dev"],
+    fs: {
+      strict: false,
+    }
   },
 });
 // timestamp: 1737105658

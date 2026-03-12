@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import LogoutButton from '../components/LogoutButton';
 import TirthYatraManagement from '../components/TirthYatraManagement';
+import SeoManagement from '../components/SeoManagement';
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
@@ -493,9 +494,20 @@ const AdminDashboard = () => {
                             </span>
                         )}
                     </button>
+                    <button
+                        onClick={() => setActiveTab('seo')}
+                        className={`px-6 py-3 font-semibold transition-all border-b-2 whitespace-nowrap flex items-center gap-2 ${activeTab === 'seo'
+                            ? 'border-indigo-500 text-indigo-700'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        SEO Management
+                    </button>
                 </div>
 
-                {activeTab === 'tirthyatra' ? (
+                {activeTab === 'seo' ? (
+                    <SeoManagement />
+                ) : activeTab === 'tirthyatra' ? (
                     <TirthYatraManagement />
                 ) : activeTab === 'registrations' ? (
                     /* Yatra Registrations Section */

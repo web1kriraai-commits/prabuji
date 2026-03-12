@@ -21,6 +21,7 @@ app.use('/api/accountability', require('./routes/accountabilityRoutes'));
 app.use('/api/tirthyatra', require('./routes/tirthYatraRoutes'));
 app.use('/api/yatra-registration', require('./routes/yatraRegistrationRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
+app.use('/api/seo', require('./routes/seoRoutes'));
 console.log('Routes loaded');
 
 // Serve static assets in production
