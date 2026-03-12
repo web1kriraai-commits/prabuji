@@ -58,14 +58,14 @@ const Contact = () => {
                     {seoData?.metaDescription || "Have questions? We'd love to hear from you. Reach out to us for any inquiries about our courses, yatras, or seva opportunities."}
                 </motion.p>
 
-                {/* Dynamic HTML Content */}
-                {seoData?.htmlContent && (
-                    <div
-                        className="prose"
-                        style={{ marginTop: '2rem', maxWidth: '800px', margin: '2rem auto 0', textAlign: 'left' }}
-                        dangerouslySetInnerHTML={{ __html: seoData.htmlContent }}
-                    />
-                )}
+                {/* HTML Content (Dynamic or Fallback) */}
+                <div
+                    className="prose"
+                    style={{ marginTop: '2rem', maxWidth: '800px', margin: '2rem auto 0', textAlign: 'left' }}
+                    dangerouslySetInnerHTML={{ 
+                        __html: seoData?.htmlContent || `<p style="text-align: center;">Have questions about our yatras, courses, or events? We'd love to hear from you.<br/>Fill out the form below or reach out to us directly through our contact details.</p>` 
+                    }}
+                />
             </div>
 
             <div className="container" style={{

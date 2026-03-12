@@ -9,8 +9,12 @@ import tem2 from '../assets/image/temp2.jpg';
 import api from '../lib/api';
 import MultiStepRegistrationForm from '../components/MultiStepRegistrationForm';
 import ContactModal from '../components/ContactModal';
+import useSeoConfig from '../hooks/useSeoConfig';
 
 const ChaloTirthyatra = () => {
+    const { seoData } = useSeoConfig();
+    const getVal = (dynamic, defaultV) => (dynamic && dynamic.trim() !== '' ? dynamic : defaultV);
+
     const [yatras, setYatras] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -58,7 +62,7 @@ const ChaloTirthyatra = () => {
                     <div className="space-y-12">
                         {yatras.length > 0 ? (
                             yatras.map((yatra, index) => (
-                                <YatraCard key={yatra._id} yatra={yatra} index={index} />
+                                <YatraCard key={yatra._id} yatra={yatra} index={index} seoData={seoData} getVal={getVal} />
                             ))
                         ) : (
                             <div className="text-center py-20 bg-white rounded-3xl shadow-xl">
@@ -72,7 +76,7 @@ const ChaloTirthyatra = () => {
     );
 };
 
-const YatraCard = ({ yatra, index }) => {
+const YatraCard = ({ yatra, index, seoData, getVal }) => {
     const [activeTab, setActiveTab] = useState('overview');
     const [showRegisterModal, setShowRegisterModal] = useState(false);
     const [showContactModal, setShowContactModal] = useState(false);
@@ -216,7 +220,7 @@ const YatraCard = ({ yatra, index }) => {
                     >
                         <FaUserPlus size={20} /> Register Now
                     </button>
-                    <WhatsAppButton link={yatra.whatsappLink} />
+                    <WhatsAppButton link={yatra.whatsappLink} seoData={seoData} getVal={getVal} />
                     <button
                         onClick={() => setShowContactModal(true)}
                         className="inline-flex items-center justify-center gap-2 bg-white text-teal-700 border-2 border-teal-700 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-teal-50 transition-all transform hover:-translate-y-1"
@@ -465,15 +469,15 @@ const GuidelinesSection = ({ instructions }) => (
     </div>
 );
 
-const WhatsAppButton = ({ link }) => (
+const WhatsAppButton = ({ link, seoData, getVal }) => (
     <a
-        href={link || "https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0"}
+        href={getVal(seoData?.internalLinks?.[0]?.targetUrl, link || "https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0")}
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-2 bg-[#25D366] text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl hover:bg-[#20bd5a] transition-all transform hover:-translate-y-1"
     >
         <FaWhatsapp size={22} />
-        Join Yatra Now
+        {getVal(seoData?.internalLinks?.[0]?.anchorText, 'Join Yatra Now')}
     </a>
 );
 

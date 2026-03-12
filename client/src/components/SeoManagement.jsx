@@ -95,14 +95,18 @@ const SeoManagement = () => {
                 { url: '', altText: 'Divine Glimpse 2', caption: '' }, // 8
                 { url: '', altText: 'Divine Glimpse 3', caption: '' }, // 9
                 { url: '', altText: 'Divine Glimpse 4', caption: '' }, // 10
-                { url: '', altText: 'Divine Glimpse 5', caption: '' }  // 11
+                { url: '', altText: 'Divine Glimpse 5', caption: '' }, // 11
+                { url: '', altText: 'Divine Kirtan & Spiritual Gathering', caption: 'Join us for an enchanting evening of devotional chanting, spiritual discourse, and divine prasadam. Experience the bliss of Krishna consciousness in the company of like-minded souls seeking spiritual elevation.' }, // 12: Upcoming Event
+                { url: '', altText: 'Support Our Mission', caption: 'Your support helps us make a real difference in the community. We work tirelessly on projects that uplift and empower those in need. Every contribution, no matter the size, has a positive impact. Join us in our mission to bring hope and change.' } // 13: Support Mission
             ],
             internalLinks: [
                 { anchorText: 'Join Our Yatra', targetUrl: '' }, // 0
                 { anchorText: 'Donate Now', targetUrl: '' }, // 1
                 { anchorText: 'Join Our Channel', targetUrl: '' }, // 2
                 { anchorText: 'Join Online - Zoom', targetUrl: '' }, // 3
-                { anchorText: 'Join Now', targetUrl: 'https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0' } // 4
+                { anchorText: 'Join Now', targetUrl: 'https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0' }, // 4
+                { anchorText: 'Reserve Your Spot', targetUrl: '' }, // 5: Upcoming Event Button
+                { anchorText: 'Donate Now', targetUrl: '' } // 6: Support Mission Button
             ]
         },
         about: {
@@ -139,7 +143,16 @@ const SeoManagement = () => {
                 h1: "Contact Us",
                 h2: "Get In Touch"
             },
-            htmlContent: `<p>Have questions about our yatras, courses, or events? We'd love to hear from you.</p>\n<p>Fill out the form below or reach out to us directly through our contact details.</p>`
+            metaDescription: "Have questions? We'd love to hear from you. Reach out to us for any inquiries about our courses, yatras, or seva opportunities.",
+            htmlContent: `<p>Have questions about our yatras, courses, or events? We'd love to hear from you.</p>\n<p>Fill out the form below or reach out to us directly through our contact details.</p>`,
+            internalLinks: [
+                { anchorText: 'Chat with us on WhatsApp', targetUrl: 'https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0' }
+            ]
+        },
+        'chalo-tirthyatra': {
+            internalLinks: [
+                { anchorText: 'Join Yatra Now', targetUrl: 'https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0' }
+            ]
         }
     };
 

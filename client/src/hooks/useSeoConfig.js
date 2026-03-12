@@ -19,6 +19,13 @@ const useSeoConfig = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Skip SEO fetch for admin routes
+        if (location.pathname.startsWith('/admin')) {
+            setSeoData(null);
+            setLoading(false);
+            return;
+        }
+
         const slug = SLUG_MAP[location.pathname] || 
                      location.pathname.replace(/^\//, '').replace(/\//g, '-') || 
                      'home';

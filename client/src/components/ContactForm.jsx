@@ -2,8 +2,14 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaWhatsapp, FaPhoneAlt, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
 import api from '../lib/api';
+import useSeoConfig from '../hooks/useSeoConfig';
 
 const ContactForm = () => {
+    const { seoData } = useSeoConfig();
+    const whatsappLinkDefault = 'https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0';
+
+    const getVal = (dynamic, hardcoded) => (dynamic && dynamic.trim() !== '' ? dynamic : hardcoded);
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -197,7 +203,7 @@ const ContactForm = () => {
 
             <div style={{ marginTop: '2rem' }}>
                 <motion.a
-                    href="https://api.whatsapp.com/send/?phone=917600156255&text&type=phone_number&app_absent=0"
+                    href={getVal(seoData?.internalLinks?.[0]?.targetUrl, whatsappLinkDefault)}
                     target="_blank"
                     rel="noopener noreferrer"
                     whileHover={{ scale: 1.02 }}
@@ -219,7 +225,7 @@ const ContactForm = () => {
                     }}
                 >
                     <FaWhatsapp size={24} />
-                    Chat with us on WhatsApp
+                    {getVal(seoData?.internalLinks?.[0]?.anchorText, 'Chat with us on WhatsApp')}
                 </motion.a>
             </div>
 

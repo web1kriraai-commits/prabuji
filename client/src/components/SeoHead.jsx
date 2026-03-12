@@ -17,6 +17,13 @@ const SeoHead = () => {
     const [config, setConfig] = useState(null);
 
     useEffect(() => {
+        // Skip SEO fetch for admin routes
+        if (location.pathname.startsWith('/admin')) {
+            setConfig(null);
+            cleanupMeta();
+            return;
+        }
+
         const slug = SLUG_MAP[location.pathname] || location.pathname.replace(/^\//, '').replace(/\//g, '-') || 'home';
 
         const baseURL = import.meta.env.PROD ? '/api' : 'http://localhost:5001/api';
