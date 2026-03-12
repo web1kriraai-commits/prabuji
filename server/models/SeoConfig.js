@@ -81,6 +81,4 @@ const seoConfigSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-seoConfigSchema.index({ pageSlug: 1 });
-
 module.exports = mongoose.model('SeoConfig', seoConfigSchema);

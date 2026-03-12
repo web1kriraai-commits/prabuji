@@ -46,9 +46,9 @@ const GaurangaVidhyapitha = () => {
                     }}>
                         {getVal(seoData?.headings?.h1, fallbacks.h1)}
                     </h1>
-                    
+
                     {/* Render split paragraphs via HTML Content */}
-                    <div 
+                    <div
                         style={{
                             fontSize: '1.2rem',
                             maxWidth: '800px',
